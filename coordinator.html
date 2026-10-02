@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    :root { --blue:#0b4a8f; --blue-soft:#dce8f7; --ink:#16233b; --muted:#5b6780; --line:#d5dce8;
+            --ok:#127a3e; --err:#b42318; --amber:#9a6700; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #eef3f9; color: var(--ink);
+           font: 14px/1.45 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+    .band { position: sticky; top: 0; z-index: 10; background: var(--blue); color: #fff; padding: 10px 16px;
+            box-shadow: 0 2px 10px rgba(8, 40, 80, .25); }
+    .band-in { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 14px; }
+    .logo { width: 0.9in; height: 0.6in; background: #fff; border-radius: 8px; padding: 4px; flex: none;
+            display: flex; align-items: center; justify-content: center; }
+    .logo img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+    h1 { font: 600 22px/1.2 Georgia, "Times New Roman", serif; margin: 0; flex: 1; }
+    .refresh { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.6); border-radius: 8px;
+               padding: 8px 12px; font: inherit; cursor: pointer; }
+    main { max-width: 900px; margin: 18px auto 40px; padding: 0 16px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .tab { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 14px;
+           font: inherit; cursor: pointer; color: var(--ink); }
+    .tab[aria-pressed="true"] { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
+    .top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+    .when { font-weight: 700; font-size: 16px; }
+    .pill { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+    .Pending { background: #fff4d6; color: var(--amber); } .Approved { background: #e3f4e8; color: var(--ok); }
+    .Rejected { background: #fde8e6; color: var(--err); }
+    .Cancelled { background: #eceff3; color: #475569; }
+    .privtag { font-size: 11px; font-weight: 700; background: #ede9fe; color: #6d28d9; padding: 2px 8px; border-radius: 99px; margin-left: 8px; }
+    .cancel { background: #475569; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 20px; margin: 10px 0 4px; }
+    .grid div span { color: var(--muted); }
+    .purpose { margin: 6px 0 0; color: #33405a; }
+    .meta { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    textarea { width: 100%; margin-top: 12px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px;
+               font: inherit; resize: vertical; }
+    .actions { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .btn { border: 0; border-radius: 8px; padding: 10px 18px; color: #fff; font: 600 14px/1 inherit; cursor: pointer; text-decoration: none; }
+    .approve { background: var(--ok); } .reject { background: var(--err); } .wa { background: #1f7a4d; }
+    .btn:disabled { opacity: .6; cursor: default; }
+    .btn:focus-visible, .tab:focus-visible { outline: 3px solid #7fa7d9; outline-offset: 2px; }
+    .res { margin-top: 10px; font-weight: 600; } .res.err { color: var(--err); }
+    .empty, .error { text-align: center; color: var(--muted); padding: 40px 10px; }
+    .error { color: var(--err); }
+    .user { font-size: 13px; opacity: .9; }
+    .signout { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.6); border-radius: 8px;
+               padding: 8px 12px; font: inherit; cursor: pointer; }
+    .login { max-width: 380px; margin: 40px auto; background: #fff; border: 1px solid var(--line); border-radius: 14px;
+             padding: 26px 24px; box-shadow: 0 8px 24px rgba(11, 74, 143, .08); }
+    .login h2 { font: 600 22px/1.2 Georgia, serif; margin: 0 0 6px; color: var(--blue); }
+    .login p { margin: 0 0 18px; color: var(--muted); }
+    .login label { display: block; font-size: 13px; color: #44506a; margin: 12px 0 5px; }
+    .login input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+    .login input:focus { outline: 2px solid var(--blue-soft); border-color: var(--blue); }
+    .login button { width: 100%; margin-top: 18px; padding: 12px; border: 0; border-radius: 8px; background: var(--blue);
+                    color: #fff; font: 600 15px/1 inherit; cursor: pointer; }
+    .login button:disabled { opacity: .6; }
+    .login .err { color: var(--err); margin: 12px 0 0; min-height: 1.2em; }
+    .card.focus { box-shadow: 0 0 0 3px var(--blue); }
+    [hidden] { display: none !important; }
+    .linkbtn { background: transparent !important; color: var(--blue) !important; border: 0; margin-top: 8px !important;
+               width: 100%; padding: 8px; font: inherit; cursor: pointer; text-decoration: underline; }
+    .users { max-width: 900px; margin: 18px auto 40px; padding: 0 16px; }
+    .users-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .users-head h2 { font: 600 22px/1.2 Georgia, serif; color: var(--blue); margin: 0; }
+    .users-head .linkbtn { width: auto; }
+    .hint2 { color: var(--muted); margin: 8px 0 14px; }
+    .urow { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .urow b { font-size: 15px; } .urow .sub { color: var(--muted); font-size: 13px; }
+    .urow .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #fff4d6; color: var(--amber); margin-left: 6px; }
+    .urow .tag.off { background: #fde8e6; color: var(--err); }
+    .temp { margin-top: 8px; padding: 8px 10px; background: #e3f4e8; border-radius: 8px; color: #0b5a2c; font-weight: 600; width: 100%; }
+    .clinicbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .clinicbar label { font-size: 13px; color: #44506a; }
+    .clinicbar select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; background: #fff; min-width: 220px; }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } h1 { font-size: 17px; } }
+  </style>
+</head>
+<body>
+<header class="band">
+  <div class="band-in">
+    <span class="logo"><img src="logo.png" alt="Kuwait Hospital logo"></span>
+    <h1>Room Booking Coordinator</h1>
+    <span class="user" id="who" hidden></span>
+    <button class="refresh" id="refresh" type="button" hidden>Refresh</button>
+    <button class="signout" id="usersBtn" type="button" hidden>Users</button>
+    <button class="signout" id="pwBtn" type="button" hidden>Change my password</button>
+    <button class="signout" id="signout" type="button" hidden>Sign out</button>
+  </div>
+</header>
+<form class="login" id="loginBox" hidden>
+  <h2>Coordinator sign-in</h2>
+  <p>Sign in to review and respond to room booking requests.</p>
+  <label for="lu">Username</label>
+  <input id="lu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+  <label for="lp">Password</label>
+  <input id="lp" type="password" autocomplete="current-password" required>
+  <button id="lb" type="submit">Sign in</button>
+  <p class="err" id="le" role="alert"></p>
+</form>
+<form class="login" id="pwBox" hidden>
+  <h2 id="pwTitle">Change your password</h2>
+  <p id="pwIntro">Choose a new password with at least 8 characters, including a letter and a number.</p>
+  <label for="pc">Current password</label>
+  <input id="pc" type="password" autocomplete="current-password" required>
+  <label for="pn">New password</label>
+  <input id="pn" type="password" autocomplete="new-password" minlength="8" required>
+  <label for="pn2">Confirm new password</label>
+  <input id="pn2" type="password" autocomplete="new-password" minlength="8" required>
+  <button id="pb" type="submit">Save new password</button>
+  <button id="pcancel" type="button" class="linkbtn">Cancel</button>
+  <p class="err" id="pe" role="alert"></p>
+</form>
+<section class="users" id="usersBox" hidden aria-labelledby="usersTitle">
+  <div class="users-head"><h2 id="usersTitle">Coordinator accounts</h2>
+    <button type="button" class="linkbtn" id="usersClose">Back to requests</button></div>
+  <p class="hint2">Reset a password if a coordinator forgets it. They get a temporary password and must choose a new one when they sign in.
+    To add coordinators or change their clinics, use the <b>Meeting Rooms</b> menu in the Google Sheet.</p>
+  <div id="usersList"></div>
+</section>
+<main id="app" hidden>
+  <div class="clinicbar" id="clinicBox" hidden>
+    <label for="clinicSel">Room</label>
+    <select id="clinicSel"></select>
+  </div>
+  <div class="tabs" role="group" aria-label="Filter">
+    <button class="tab" type="button" data-f="Pending" aria-pressed="true">Pending</button>
+    <button class="tab" type="button" data-f="Approved" aria-pressed="false">Approved</button>
+    <button class="tab" type="button" data-f="Rejected" aria-pressed="false">Rejected</button>
+    <button class="tab" type="button" data-f="Cancelled" aria-pressed="false">Cancelled</button>
+    <button class="tab" type="button" data-f="All" aria-pressed="false">All</button>
+  </div>
+  <div id="list"><p class="empty">Loading requests…</p></div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const app = $('app'), list = $('list'), FOCUS = (new URLSearchParams(location.search).get('id') || '').replace(/[^A-Za-z0-9-]/g, '');
+  let TOKEN = '';
+  try { TOKEN = sessionStorage.getItem('kh_coord') || ''; } catch (e) {}
+  const saveToken = t => { TOKEN = t; try { t ? sessionStorage.setItem('kh_coord', t) : sessionStorage.removeItem('kh_coord'); } catch (e) {} };
+  const clean = e => String((e && e.message) || e).replace(/^(Error|Exception):\s*/, '');
+  const expired = e => /SESSION_EXPIRED|NO_ACCESS/.test(String((e && e.message) || e));
+  const mustChg = e => /MUST_CHANGE/.test(String((e && e.message) || e));
+  const HDR = ['who', 'refresh', 'usersBtn', 'pwBtn', 'signout'];
+  function showLogin(msg) {
+    saveToken(''); app.hidden = true; $('loginBox').hidden = false; $('pwBox').hidden = true; $('usersBox').hidden = true;
+    HDR.forEach(id => $(id).hidden = true);
+    $('le').textContent = msg || ''; $('lu').focus();
+  }
+  let ME = null;
+  function showApp(info) {
+    ME = info;
+    $('loginBox').hidden = true;
+    $('who').textContent = info.user + ' · ' + info.label; $('who').hidden = false; $('signout').hidden = false;
+    if (info.mustChange) return showPw(true);        // first sign-in with a temporary password
+    $('pwBox').hidden = true; $('usersBox').hidden = true; app.hidden = false;
+    ['refresh', 'pwBtn'].forEach(id => $(id).hidden = false);
+    $('usersBtn').hidden = !info.all;
+    $('clinicBox').hidden = !(info.all || info.clinics.length > 1);
+    load();
+  }
+  function showPw(forced) {
+    app.hidden = true; $('usersBox').hidden = true; $('pwBox').hidden = false;
+    ['refresh', 'pwBtn', 'usersBtn'].forEach(id => $(id).hidden = true);
+    $('pwTitle').textContent = forced ? 'Set your own password' : 'Change your password';
+    $('pwIntro').textContent = (forced ? 'You signed in with a temporary password. ' : '') +
+      'Choose a new password with at least 8 characters, including a letter and a number.';
+    $('pcancel').hidden = !!forced;
+    ['pc', 'pn', 'pn2'].forEach(id => $(id).value = ''); $('pe').textContent = ''; $('pc').focus();
+  }
+  $('pwBtn').addEventListener('click', () => showPw(false));
+  $('pcancel').addEventListener('click', () => showApp(ME));
+  $('pwBox').addEventListener('submit', e => {
+    e.preventDefault();
+    if ($('pn').value !== $('pn2').value) { $('pe').textContent = 'The new passwords do not match.'; return; }
+    const b = $('pb'); b.disabled = true; b.textContent = 'Saving…'; $('pe').textContent = '';
+    google.script.run
+      .withSuccessHandler(r => { b.disabled = false; b.textContent = 'Save new password'; saveToken(r.token); showApp(r);
+                                 alert('Your password has been changed.'); })
+      .withFailureHandler(err => { b.disabled = false; b.textContent = 'Save new password';
+                                   if (expired(err)) return showLogin('Please sign in again.'); $('pe').textContent = clean(err); })
+      .coordChangePassword(TOKEN, $('pc').value, $('pn').value);
+  });
+  // Supervisor: accounts list with password reset
+  $('usersBtn').addEventListener('click', () => {
+    app.hidden = true; $('usersBox').hidden = false; $('usersList').innerHTML = '<p class="empty">Loading…</p>';
+    google.script.run
+      .withSuccessHandler(users => {
+        const box = $('usersList'); box.innerHTML = '';
+        users.forEach(u => {
+          const row = el('div', 'urow'), left = el('div');
+          left.append(el('b', null, u.user));
+          if (u.mustChange) left.append(el('span', 'tag', 'temporary password'));
+          if (!u.active) left.append(el('span', 'tag off', 'inactive'));
+          left.append(el('div', 'sub', u.label + (u.email ? ' · ' + u.email : '')));
+          row.append(left);
+          if (!u.me) {
+            const btn = el('button', 'btn reject', 'Reset password'); btn.type = 'button';
+            btn.addEventListener('click', () => {
+              if (!confirm('Reset the password for ' + u.user + '? Their current password stops working.')) return;
+              btn.disabled = true;
+              google.script.run
+                .withSuccessHandler(r => { btn.remove();
+                  row.append(el('div', 'temp', 'Temporary password for ' + r.user + ':  ' + r.password + '   (give it to them; they must change it at sign-in)')); })
+                .withFailureHandler(err => { btn.disabled = false; alert(clean(err)); })
+                .coordResetPassword(TOKEN, u.user);
+            });
+            row.append(btn);
+          } else row.append(el('span', 'sub', 'you – use "Change my password"'));
+          box.append(row);
+        });
+      })
+      .withFailureHandler(err => { if (expired(err)) return showLogin('Please sign in again.'); $('usersList').textContent = clean(err); })
+      .coordUsers(TOKEN);
+  });
+  $('usersClose').addEventListener('click', () => showApp(ME));
+  $('loginBox').addEventListener('submit', e => {
+    e.preventDefault();
+    const b = $('lb'); b.disabled = true; b.textContent = 'Signing in…'; $('le').textContent = '';
+    google.script.run
+      .withSuccessHandler(r => { b.disabled = false; b.textContent = 'Sign in'; $('lp').value = ''; saveToken(r.token); showApp(r); })
+      .withFailureHandler(err => { b.disabled = false; b.textContent = 'Sign in'; $('le').textContent = clean(err); $('lp').select(); })
+      .coordLogin($('lu').value, $('lp').value);
+  });
+  $('signout').addEventListener('click', () => { google.script.run.coordLogout(TOKEN); showLogin('You have signed out.'); });
+  let data = [], filter = 'Pending', first = true;
+
+  function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function field(label, value) { const d = el('div'); d.append(el('span', null, label + ': '), document.createTextNode(value || '-')); return d; }
+
+  function fillClinics() {                 // clinic filter for "all clinics" or multi-clinic coordinators
+    const sel = $('clinicSel'), keep = sel.value;
+    const names = [...new Set(data.map(r => r.clinic))].sort();
+    sel.innerHTML = '';
+    sel.add(new Option('All my rooms', ''));
+    names.forEach(n => sel.add(new Option(n + ' (' + data.filter(r => r.clinic === n && r.status === 'Pending').length + ' pending)', n)));
+    sel.value = names.includes(keep) ? keep : '';
+  }
+  function render() {
+    list.innerHTML = '';
+    const cSel = $('clinicSel').value;
+    const base = cSel ? data.filter(r => r.clinic === cSel) : data;
+    document.querySelectorAll('.tab').forEach(t => {
+      const n = t.dataset.f === 'All' ? base.length : base.filter(r => r.status === t.dataset.f).length;
+      t.textContent = t.dataset.f + ' (' + n + ')';
+      t.setAttribute('aria-pressed', String(t.dataset.f === filter));
+    });
+    const rows = filter === 'All' ? base : base.filter(r => r.status === filter);
+    if (!rows.length) { list.append(el('p', 'empty', filter === 'Pending' ? 'No pending bookings.' : 'Nothing here yet.')); return; }
+    rows.forEach(r => {
+      const c = el('article', 'card');
+      const top = el('div', 'top');
+      top.append(el('div', 'when', r.clinic + '  ·  ' + r.when), el('span', 'pill ' + r.status, r.status));
+      const h = el('div', 'purpose'); h.style.fontWeight = '600'; h.style.color = 'var(--ink)'; h.textContent = r.title;
+      if (r.priv) h.append(el('span', 'privtag', 'Private'));
+      const g = el('div', 'grid');
+      g.append(field('Requested by', r.name), field('Department', r.dept), field('Email', r.email),
+               field('Mobile', r.mobile), field('Attendees', r.attendees), field('IT requirements', r.needs), field('Refreshments', r.refresh));
+      c.append(top, h, g);
+      if (r.notes) c.append(el('p', 'purpose', 'Notes: ' + r.notes));
+      if (r.id === FOCUS) c.classList.add('focus');
+      c.id = 'card-' + r.id;
+      c.append(el('div', 'meta', 'Ref ' + r.id + ' · submitted ' + r.submitted + (r.decidedBy ? ' · by ' + r.decidedBy : '') + (r.note ? ' · Note: ' + r.note : '')));
+      const acts = r.status === 'Pending' ? [['approve', 'Approve', 'btn approve'], ['reject', 'Reject', 'btn reject']]
+                 : (r.status === 'Approved' && r.future ? [['cancel', 'Cancel booking', 'btn cancel']] : []);
+      if (acts.length) {
+        const note = el('textarea'); note.rows = 2; note.maxLength = 500;
+        note.placeholder = 'Message to requester (optional)'; note.setAttribute('aria-label', 'Message to ' + r.name);
+        const act = el('div', 'actions'), res = el('div', 'res');
+        const btns = acts.map(([a, label, cls]) => { const b = el('button', cls, label); b.type = 'button'; b.dataset.a = a; return b; });
+        const go = action => {
+          const verb = { approve: 'Approve', reject: 'Reject', cancel: 'Cancel' }[action];
+          if (!confirm(verb + ' ' + r.clinic + ' for ' + r.name + ' on ' + r.when + '?')) return;
+          btns.forEach(b => b.disabled = true); res.className = 'res'; res.textContent = 'Saving…';
+          google.script.run
+            .withSuccessHandler(out => {
+              r.status = out.status; res.textContent = out.status + '. The requester has been emailed.';
+              act.remove(); note.remove();
+              c.querySelector('.pill').className = 'pill ' + out.status; c.querySelector('.pill').textContent = out.status;
+            })
+            .withFailureHandler(e => {
+              if (expired(e)) return showLogin('Your session has ended. Please sign in again.');
+              btns.forEach(b => b.disabled = false); res.className = 'res err'; res.textContent = clean(e); })
+            .coordDecide(TOKEN, r.id, action, note.value);
+        };
+        btns.forEach(b => b.addEventListener('click', () => go(b.dataset.a)));
+        act.append(...btns); c.append(note, act, res);
+      }
+      list.append(c);
+    });
+  }
+  function load() {
+    list.innerHTML = '<p class="empty">Loading requests…</p>';
+    google.script.run
+      .withSuccessHandler(d => {
+        data = d; fillClinics();
+        const f = FOCUS && d.find(r => r.id === FOCUS);
+        if (f && first) { filter = f.status; }
+        render();
+        if (f && first) { const n = document.getElementById('card-' + f.id); if (n) n.scrollIntoView({ block: 'center' }); }
+        first = false;
+      })
+      .withFailureHandler(e => {
+        if (expired(e)) return showLogin('Please sign in.');
+        if (mustChg(e)) return showPw(true);
+        list.innerHTML = ''; list.append(el('p', 'error', clean(e))); })
+      .coordList(TOKEN);
+  }
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { filter = t.dataset.f; render(); }));
+  $('refresh').addEventListener('click', load);
+  $('clinicSel').addEventListener('change', render);
+  // Start: reuse the session from this browser tab if it is still valid
+  if (TOKEN) google.script.run.withSuccessHandler(showApp).withFailureHandler(() => showLogin('')).coordWhoAmI(TOKEN);
+  else showLogin('');
+</script>
+</body>
+</html>
