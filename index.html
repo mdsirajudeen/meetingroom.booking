@@ -9,7 +9,6 @@
     body { margin: 0; background: var(--bg); color: var(--ink);
            font: 15px/1.45 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
 
-    /* Blue header: logo + title (same as the appointment form) */
     .band { position: sticky; top: 0; z-index: 30; background: var(--blue); color: #fff;
             padding: 10px 16px; box-shadow: 0 2px 10px rgba(8, 40, 80, .25); }
     .band-in { max-width: 560px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 14px; }
@@ -36,7 +35,15 @@
     .hint.err { color: var(--err); }
     .busy { font-size: 12.5px; color: #8a5a00; background: #fff7e6; border: 1px solid #f5dfb3; border-radius: 8px; padding: 7px 10px; }
 
-    /* Date + time fields with pop-up calendar (same as the appointment form) */
+    /* ── Section divider ── */
+    .sec-divider {
+      grid-column: 1 / -1;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--blue);
+      border-bottom: 2px solid var(--blue-soft);
+      padding-bottom: 5px; margin-top: 6px;
+    }
+
     .dt-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 12px; }
     .datebox, .timebox { position: relative; }
     .field-btn { width: 100%; display: flex; align-items: center; justify-content: space-between;
@@ -67,7 +74,6 @@
     .days button.today { box-shadow: inset 0 0 0 1.5px var(--blue); }
     .days button.sel { background: var(--blue); color: #fff; font-weight: 600; box-shadow: none; }
 
-    /* Tick-box groups (IT / refreshments) */
     fieldset { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 14px; margin: 0; }
     legend { font-size: 13px; color: #44506a; padding: 0 6px; }
     legend small { color: var(--muted); }
@@ -102,6 +108,10 @@
   <form id="f" novalidate>
     <p class="req-note">Fields marked <b>*</b> are required. Please use your hospital email address.</p>
     <div class="grid">
+
+      <!-- ══ REQUESTER DETAILS ════════════════════════════════ -->
+      <div class="sec-divider">Requester Details</div>
+
       <div><label for="name" class="req">Your name</label>
         <input id="name" name="name" required maxlength="100" autocomplete="name"></div>
       <div><label for="dept" class="req">Department</label>
@@ -111,13 +121,28 @@
       <div><label for="mobile">Mobile / extension</label>
         <input id="mobile" name="mobile" type="tel" maxlength="15" autocomplete="tel"></div>
 
+      <!-- ══ MEETING DETAILS ══════════════════════════════════ -->
+      <div class="sec-divider">Meeting Details</div>
+
+      <!-- ✦ NEW: Host / Organizer name -->
+      <div><label for="host" class="req">Host / Organizer name</label>
+        <input id="host" name="host" required maxlength="150"
+               placeholder="e.g. Dr. Khalid Al-Rashidi"></div>
+
+      <!-- ✦ UPDATED: Meeting / Event title (was "Meeting title") -->
+      <div><label for="title" class="req">Meeting / Event title</label>
+        <input id="title" name="title" required maxlength="150"
+               placeholder="e.g. Cardiology Quarterly Review"></div>
+
       <div class="full"><label for="room" class="req">Room</label>
         <select id="room" name="room" required><option value="">Loading rooms…</option></select>
         <div class="hint" id="roomHint"></div></div>
-      <div><label for="title" class="req">Meeting title</label>
-        <input id="title" name="title" required maxlength="150"></div>
+
       <div><label for="attendees" class="req">Number of attendees</label>
         <input id="attendees" name="attendees" type="number" min="1" max="500" required></div>
+
+      <!-- ══ DATE & TIME ════════════════════════════════════= -->
+      <div class="sec-divider">Date &amp; Time</div>
 
       <div class="full">
         <span class="label req" id="dtLabel">Date / Time</span>
@@ -147,6 +172,9 @@
       </div>
       <div class="full" id="busyBox" hidden><div class="busy" id="busy"></div></div>
 
+      <!-- ══ REQUIREMENTS ══════════════════════════════════════ -->
+      <div class="sec-divider">Requirements &amp; Extras</div>
+
       <div class="full">
         <fieldset>
           <legend>IT requirements <small>– sent to IT Support when approved</small></legend>
@@ -173,7 +201,7 @@
         </fieldset>
       </div>
 
-      <div class="full"><label class="check"><input type="checkbox" id="priv"> Private meeting – the room screen shows “Private meeting” instead of the title and your name</label></div>
+      <div class="full"><label class="check"><input type="checkbox" id="priv"> Private meeting – the room screen shows "Private meeting" instead of the title and your name</label></div>
       <div class="full"><label for="notes">Notes</label>
         <textarea id="notes" name="notes" rows="3" maxlength="1000"></textarea></div>
     </div>
@@ -284,15 +312,38 @@
   /* ---- submit ---- */
   f.addEventListener('submit', e => {
     e.preventDefault(); say('');
-    for (const id of ['name', 'dept', 'email', 'room', 'title', 'attendees']) if (!$(id).value.trim()) { say('Please fill in all required fields.', 'err'); $(id).focus(); return; }
-    if (CFG.domain && !$('email').value.trim().toLowerCase().endsWith('@' + CFG.domain)) { say('Please use your hospital email (@' + CFG.domain + ').', 'err'); $('email').focus(); return; }
+
+    /* validate — now includes host field */
+    for (const id of ['name', 'dept', 'email', 'host', 'title', 'room', 'attendees']) {
+      if (!$(id).value.trim()) {
+        say('Please fill in all required fields.', 'err'); $(id).focus(); return;
+      }
+    }
+    if (CFG.domain && !$('email').value.trim().toLowerCase().endsWith('@' + CFG.domain)) {
+      say('Please use your hospital email (@' + CFG.domain + ').', 'err'); $('email').focus(); return;
+    }
     if (!date.value) { say('Choose a date.', 'err'); openCal(); return; }
     if (!start.value || !end.value) { say('Choose a start and end time.', 'err'); return; }
-    const data = { name: $('name').value, dept: $('dept').value, email: $('email').value, mobile: $('mobile').value, room: room.value,
-      title: $('title').value, attendees: $('attendees').value, date: date.value, start: start.value, end: end.value,
-      needs: [...document.querySelectorAll('input[name=it]:checked')].map(x => x.value).join(', '),
-      refresh: [[...document.querySelectorAll('input[name=food]:checked')].map(x => x.value).join(', '), $('foodNote').value.trim()].filter(Boolean).join(' – '),
-      priv: $('priv').checked, notes: $('notes').value };
+
+    /* build data payload — host field added */
+    const data = {
+      name:      $('name').value,
+      dept:      $('dept').value,
+      email:     $('email').value,
+      mobile:    $('mobile').value,
+      host:      $('host').value,      /* ← Host / Organizer name */
+      room:      room.value,
+      title:     $('title').value,     /* ← Meeting / Event title */
+      attendees: $('attendees').value,
+      date:      date.value,
+      start:     start.value,
+      end:       end.value,
+      needs:     [...document.querySelectorAll('input[name=it]:checked')].map(x => x.value).join(', '),
+      refresh:   [[...document.querySelectorAll('input[name=food]:checked')].map(x => x.value).join(', '), $('foodNote').value.trim()].filter(Boolean).join(' – '),
+      priv:      $('priv').checked,
+      notes:     $('notes').value
+    };
+
     send.disabled = true; send.textContent = 'Sending…';
     google.script.run.withSuccessHandler(r => {
       say((r.status === 'Approved' ? 'Booked! ' : 'Request sent for approval. ') + r.room + ', ' + r.when + ' – reference ' + r.id + '. Check your email.', 'ok');
