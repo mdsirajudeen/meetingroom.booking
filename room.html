@@ -16,36 +16,36 @@
     .top { display: flex; align-items: center; justify-content: space-between; gap: 16px;
            border-bottom: 1px solid #1e2a3a; padding-bottom: 1.6vh; }
     .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
-    .logo { height: 7vh; min-height: 44px; aspect-ratio: 1.5; background: #fff;
-            border-radius: 10px; padding: 4px; display: flex; align-items: center; justify-content: center; }
+    .logo  { height: 7vh; min-height: 44px; aspect-ratio: 1.5; background: #fff;
+             border-radius: 10px; padding: 4px; display: flex; align-items: center; justify-content: center; }
     .logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    .room { font-size: clamp(22px, 4vh, 40px); font-weight: 700; white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis; }
-    .sub  { color: #94a3b8; font-size: clamp(12px, 1.8vh, 17px); }
+    .room  { font-size: clamp(22px,4vh,40px); font-weight: 700; white-space: nowrap;
+             overflow: hidden; text-overflow: ellipsis; }
+    .sub   { color: #94a3b8; font-size: clamp(12px,1.8vh,17px); }
     .clock { text-align: right; }
-    .clock .t { font-size: clamp(24px, 5vh, 52px); font-weight: 700; font-variant-numeric: tabular-nums; }
-    .live { display: inline-flex; align-items: center; gap: 8px; color: #94a3b8;
-            font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
+    .clock .t { font-size: clamp(24px,5vh,52px); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .live  { display: inline-flex; align-items: center; gap: 8px; color: #94a3b8;
+             font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
     .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%;
                     background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: p 2s infinite; }
     .live.off::before { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
-    @keyframes p { 50% { opacity: .35; } }
+    @keyframes p { 50% { opacity:.35; } }
 
     /* ── STATUS BANNER ── */
     .status { border-radius: 28px; padding: 4vh 3vw; text-align: center;
               transition: background .4s; box-shadow: inset 0 2px 10px rgba(0,0,0,.35); }
     .status.busy { background: var(--busy); }
     .status.free { background: var(--free); }
-    .label  { font-size: clamp(40px, 11vh, 120px); font-weight: 800;
+    .label   { font-size: clamp(40px,11vh,120px); font-weight: 800;
                text-transform: uppercase; line-height: 1.05; letter-spacing: 2px; }
-    .mtitle { font-size: clamp(20px, 4vh, 40px); font-weight: 600; margin-top: 1vh; word-break: break-word; }
-    .host   { font-size: clamp(15px, 2.6vh, 26px); opacity: .9; }
-    .count  { display: inline-block; margin-top: 1.6vh; background: rgba(0,0,0,.22);
-              padding: .8vh 2vw; border-radius: 99px;
-              font-size: clamp(16px, 2.8vh, 28px); font-weight: 600; }
-    .bar  { margin-top: 2vh; height: 14px; background: rgba(0,0,0,.3); border-radius: 99px; overflow: hidden; }
-    .fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), #f59e0b); transition: width .5s; }
-    .barlbl { display: flex; justify-content: space-between; font-size: 13px; color: #e2e8f0; margin-top: 6px; }
+    .mtitle  { font-size: clamp(20px,4vh,40px); font-weight: 600; margin-top: 1vh; word-break: break-word; }
+    .host    { font-size: clamp(15px,2.6vh,26px); opacity: .9; }
+    .count   { display: inline-block; margin-top: 1.6vh; background: rgba(0,0,0,.22);
+               padding: .8vh 2vw; border-radius: 99px;
+               font-size: clamp(16px,2.8vh,28px); font-weight: 600; }
+    .bar     { margin-top: 2vh; height: 14px; background: rgba(0,0,0,.3); border-radius: 99px; overflow: hidden; }
+    .fill    { height: 100%; width: 0; background: linear-gradient(90deg,var(--gold),#f59e0b); transition: width .5s; }
+    .barlbl  { display: flex; justify-content: space-between; font-size: 13px; color: #e2e8f0; margin-top: 6px; }
 
     /* ── SCHEDULE ── */
     .up    { flex: 1; display: flex; flex-direction: column; min-height: 0; }
@@ -56,8 +56,8 @@
     li { background: #1a2332; border-radius: 18px; padding: 1.4vh 18px;
          border-left: 5px solid var(--gold); display: flex; justify-content: space-between;
          gap: 12px; align-items: center; }
-    li .tm { font-weight: 700; color: #e2e8f0; font-size: clamp(15px, 2.2vh, 22px); font-variant-numeric: tabular-nums; }
-    li .nm { color: #94a3b8; font-size: clamp(13px, 1.9vh, 19px); }
+    li .tm { font-weight: 700; color: #e2e8f0; font-size: clamp(15px,2.2vh,22px); font-variant-numeric: tabular-nums; }
+    li .nm { color: #94a3b8; font-size: clamp(13px,1.9vh,19px); }
     li.past { opacity: .45; border-left-color: #475569; }
     li.active-slot { border-left-color: #ef4444; background: #1f1515; }
     .none  { color: #64748b; font-style: italic; text-align: center; padding: 2vh 0; }
@@ -66,68 +66,131 @@
 
     /* ── SETUP SCREEN ── */
     .setup { margin: auto; text-align: center; padding: 4vh; }
-    .setup h2 { color: var(--gold); font-size: clamp(20px, 4vh, 36px); margin-bottom: 2vh; }
+    .setup h2 { color: var(--gold); font-size: clamp(20px,4vh,36px); margin-bottom: 2vh; }
     .url-box { background: #1a2332; border-radius: 14px; padding: 2vh 3vw; margin: 1.5vh 0;
                border-left: 4px solid var(--gold); text-align: left; }
-    .url-box .lbl { font-size: 12px; color: #94a3b8; letter-spacing: 1.5px;
-                    text-transform: uppercase; margin-bottom: 6px; }
-    .url-box .url { font-size: clamp(12px, 1.8vh, 16px); color: #e2e8f0;
-                    word-break: break-all; font-family: monospace; }
+    .url-box .lbl { font-size: 12px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+    .url-box .url { font-size: clamp(12px,1.8vh,16px); color: #e2e8f0; word-break: break-all; font-family: monospace; }
 
-    /* ── SCREENSAVER ── */
+    /* ════════════════════════════════════════════════════════════
+       SCREENSAVER — two modes:
+         .ss-mode-logo   → default matrix + LED logo animation
+         .ss-mode-alert  → upcoming meeting warning card
+    ════════════════════════════════════════════════════════════ */
     #screensaver {
       display: none;
       position: fixed; inset: 0; z-index: 9999;
       background: #0b1a3d;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      align-items: center; justify-content: center;
       cursor: pointer;
       font-family: "Segoe UI", system-ui, sans-serif;
     }
     #screensaver.active { display: flex; }
-    #ss-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .35; }
-    #ss-vignette {
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse 65% 65% at 50% 48%, rgba(11,26,61,0) 20%, rgba(11,26,61,.88) 100%);
-      pointer-events: none;
+
+    /* shared corners */
+    .ss-corner { position: absolute; z-index: 6; width: 16px; height: 16px;
+                 border-color: rgba(100,160,255,.4); border-style: solid; }
+    .ss-tl { top:14px; left:14px;  border-width:1.5px 0 0 1.5px; }
+    .ss-tr { top:14px; right:14px; border-width:1.5px 1.5px 0 0; }
+    .ss-bl { bottom:14px; left:14px;  border-width:0 0 1.5px 1.5px; }
+    .ss-br { bottom:14px; right:14px; border-width:0 1.5px 1.5px 0; }
+    .ss-hint { position:absolute; bottom:20px; color:rgba(100,160,255,.3);
+               font-size:11px; letter-spacing:1px; z-index:7; }
+
+    /* ── LOGO MODE ── */
+    #ss-logo-mode { display:flex; flex-direction:column; align-items:center; position:relative; z-index:5; }
+    #ss-canvas { position:absolute; inset:0; width:100%; height:100%; opacity:.35; pointer-events:none; }
+    #ss-vignette { position:absolute; inset:0; pointer-events:none;
+                   background:radial-gradient(ellipse 65% 65% at 50% 48%,rgba(11,26,61,0) 20%,rgba(11,26,61,.88) 100%); }
+    .ss-logo-wrap { position:relative; width:130px; height:130px; display:flex; align-items:center; justify-content:center; }
+    #ss-led { position:absolute; top:0; left:0; width:130px; height:130px; }
+    .ss-logo-sq { width:106px; height:106px; background:#fff; border-radius:12px;
+                  display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .ss-logo-sq img { width:90px; height:90px; object-fit:contain; display:block; }
+    .ss-name { color:#fff; font-size:19px; font-weight:500; letter-spacing:4px; margin-top:20px; text-align:center; text-shadow:0 0 30px rgba(100,160,255,.4); }
+    .ss-sub  { color:rgba(120,170,255,.45); font-size:9.5px; letter-spacing:3.5px; margin-top:5px; text-align:center; }
+    .ss-div  { width:180px; height:1px; background:linear-gradient(90deg,transparent,rgba(100,160,255,.35),transparent); margin:16px auto 0; }
+    .ss-clk  { color:#c8e0ff; font-size:40px; font-weight:200; letter-spacing:6px; font-family:monospace; margin-top:16px; text-align:center; text-shadow:0 0 20px rgba(100,160,255,.4); }
+    .ss-dt   { color:rgba(100,160,255,.4); font-size:10px; letter-spacing:3px; font-family:monospace; margin-top:6px; text-align:center; }
+
+    /* ── ALERT MODE — upcoming meeting card ── */
+    #ss-alert-mode {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      padding: 40px 60px;
     }
-    .ss-content { position: relative; z-index: 5; display: flex; flex-direction: column; align-items: center; }
-    .ss-logo-wrap { position: relative; width: 130px; height: 130px; display: flex; align-items: center; justify-content: center; }
-    #ss-led { position: absolute; top: 0; left: 0; width: 130px; height: 130px; }
-    .ss-logo-sq {
-      width: 106px; height: 106px; background: #fff; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    #ss-alert-mode.show { display: flex; }
+    #ss-logo-mode.hidden { display: none; }
+
+    .alert-badge {
+      background: #c9a961;
+      color: #0b1a3d;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      padding: 6px 20px;
+      border-radius: 30px;
+      margin-bottom: 28px;
+      animation: badge-pulse 2s ease-in-out infinite;
     }
-    .ss-logo-sq img { width: 90px; height: 90px; object-fit: contain; display: block; }
-    .ss-name { color: #fff; font-size: 19px; font-weight: 500; letter-spacing: 4px; margin-top: 20px; text-align: center; text-shadow: 0 0 30px rgba(100,160,255,.4); }
-    .ss-sub  { color: rgba(120,170,255,.45); font-size: 9.5px; letter-spacing: 3.5px; margin-top: 5px; text-align: center; }
-    .ss-div  { width: 180px; height: 1px; background: linear-gradient(90deg, transparent, rgba(100,160,255,.35), transparent); margin: 16px auto 0; }
-    .ss-clk  { color: #c8e0ff; font-size: 40px; font-weight: 200; letter-spacing: 6px; font-family: monospace; margin-top: 16px; text-align: center; text-shadow: 0 0 20px rgba(100,160,255,.4); }
-    .ss-dt   { color: rgba(100,160,255,.4); font-size: 10px; letter-spacing: 3px; font-family: monospace; margin-top: 6px; text-align: center; }
-    .ss-corner { position: absolute; z-index: 6; width: 16px; height: 16px; border-color: rgba(100,160,255,.4); border-style: solid; }
-    .ss-tl { top: 14px; left: 14px; border-width: 1.5px 0 0 1.5px; }
-    .ss-tr { top: 14px; right: 14px; border-width: 1.5px 1.5px 0 0; }
-    .ss-bl { bottom: 14px; left: 14px; border-width: 0 0 1.5px 1.5px; }
-    .ss-br { bottom: 14px; right: 14px; border-width: 0 1.5px 1.5px 0; }
-    .ss-hint { position: absolute; bottom: 20px; color: rgba(100,160,255,.3); font-size: 11px; letter-spacing: 1px; }
+    @keyframes badge-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(201,169,97,.5); }
+      50%      { box-shadow: 0 0 0 12px rgba(201,169,97,0); }
+    }
+    .alert-card {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(100,160,255,.25);
+      border-radius: 24px;
+      padding: 40px 50px;
+      text-align: center;
+      max-width: 680px;
+      width: 100%;
+    }
+    .alert-in    { color: rgba(100,160,255,.7); font-size: 13px; letter-spacing: 2px; margin-bottom: 10px; }
+    .alert-timer { color: #c9a961; font-size: clamp(48px,10vh,90px); font-weight: 200;
+                   font-family: monospace; letter-spacing: 4px; line-height: 1;
+                   text-shadow: 0 0 30px rgba(201,169,97,.5); }
+    .alert-label { color: rgba(255,255,255,.5); font-size: 14px; letter-spacing: 1.5px; margin-top: 6px; margin-bottom: 28px; }
+    .alert-divider { width: 60px; height: 1px; background: rgba(100,160,255,.2); margin: 0 auto 28px; }
+    .alert-title { color: #fff; font-size: clamp(22px,4vh,38px); font-weight: 600;
+                   line-height: 1.2; margin-bottom: 12px; }
+    .alert-meta  { color: rgba(150,190,255,.7); font-size: clamp(14px,2.2vh,20px); margin-bottom: 8px; }
+    .alert-time  { color: #c9a961; font-size: clamp(16px,2.5vh,24px); font-weight: 500; }
+    .alert-room  { color: rgba(100,160,255,.5); font-size: 13px; letter-spacing: 1px; margin-top: 6px; }
+
+    .alert-progress { margin-top: 28px; height: 4px; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; }
+    .alert-prog-fill { height: 100%; background: linear-gradient(90deg,#c9a961,#f59e0b);
+                       border-radius: 99px; transition: width 1s linear; }
+    .alert-ss-clk { color: rgba(200,224,255,.5); font-size: 22px; font-weight: 200;
+                    font-family: monospace; letter-spacing: 4px; margin-top: 32px; }
   </style>
 </head>
 <body>
 
-<!-- ══ SCREENSAVER ══════════════════════════════════════════════ -->
+<!-- ══ SCREENSAVER ════════════════════════════════════════════ -->
 <div id="screensaver" onclick="exitScreensaver()">
+  <!-- shared corners -->
   <div class="ss-corner ss-tl"></div>
   <div class="ss-corner ss-tr"></div>
   <div class="ss-corner ss-bl"></div>
   <div class="ss-corner ss-br"></div>
+  <div class="ss-hint">Tap anywhere to return</div>
+
+  <!-- Matrix canvas + vignette (always present in BG) -->
   <canvas id="ss-canvas"></canvas>
   <div id="ss-vignette"></div>
-  <div class="ss-content">
+
+  <!-- MODE 1: Default logo animation -->
+  <div id="ss-logo-mode">
     <div class="ss-logo-wrap">
       <canvas id="ss-led" width="130" height="130"></canvas>
       <div class="ss-logo-sq">
-        <img src="logo.png" alt="Kuwait Hospital" onerror="this.style.display='none';this.parentNode.innerHTML='<div style=\'width:60px;height:60px;position:relative\'><div style=\'position:absolute;width:60px;height:16px;background:#0b4a8f;top:50%;left:0;transform:translateY(-50%);border-radius:2px\'></div><div style=\'position:absolute;width:16px;height:60px;background:#0b4a8f;left:50%;top:0;transform:translateX(-50%);border-radius:2px\'></div></div>'">
+        <img src="logo.png" alt="Kuwait Hospital">
       </div>
     </div>
     <div class="ss-name">KUWAIT HOSPITAL</div>
@@ -136,10 +199,28 @@
     <div class="ss-clk" id="ss-clk">--:--:--</div>
     <div class="ss-dt"  id="ss-dt">--- -- --- ----</div>
   </div>
-  <div class="ss-hint">Tap anywhere to return</div>
+
+  <!-- MODE 2: Upcoming meeting alert -->
+  <div id="ss-alert-mode">
+    <div class="alert-badge" id="alert-badge">⏰ &nbsp; UPCOMING MEETING</div>
+    <div class="alert-card">
+      <div class="alert-in">STARTS IN</div>
+      <div class="alert-timer" id="alert-timer">--:--</div>
+      <div class="alert-label">MINUTES</div>
+      <div class="alert-divider"></div>
+      <div class="alert-title"  id="alert-title">Loading…</div>
+      <div class="alert-meta"   id="alert-meta"></div>
+      <div class="alert-time"   id="alert-time"></div>
+      <div class="alert-room"   id="alert-room"></div>
+      <div class="alert-progress">
+        <div class="alert-prog-fill" id="alert-prog" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="alert-ss-clk" id="alert-clk">--:--:--</div>
+  </div>
 </div>
 
-<!-- ══ MAIN DISPLAY ════════════════════════════════════════════ -->
+<!-- ══ MAIN DISPLAY ══════════════════════════════════════════ -->
 <div class="wrap">
   <div class="top">
     <div class="brand">
@@ -181,297 +262,411 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script>
-  const $   = id => document.getElementById(id);
-  const pad = n  => String(n).padStart(2, '0');
-  const ROOM = (new URLSearchParams(location.search).get('room') || '').trim();
+/* ─────────────────────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────────────────────── */
+const $   = id => document.getElementById(id);
+const pad = n  => String(n).padStart(2, '0');
+const ROOM = (new URLSearchParams(location.search).get('room') || '').trim();
 
-  let skew = 0;
-  const nowMs  = () => Date.now() + skew;
-  const toKuwaitHM = ms => {
-    const d = new Date(ms);
-    const h = (d.getUTCHours() + 3) % 24;
-    const m = d.getUTCMinutes();
-    return pad(h) + ':' + pad(m);
-  };
-  const durStr = ms => {
-    const m = Math.max(0, Math.ceil(ms / 60000));
-    return m >= 60 ? Math.floor(m/60) + ' h ' + (m%60 ? (m%60) + ' min' : '') : m + ' min';
-  };
+let skew = 0;
+const nowMs      = () => Date.now() + skew;
+const toKuwaitHM = ms => {
+  const d = new Date(ms);
+  const h = (d.getUTCHours() + 3) % 24;
+  return pad(h) + ':' + pad(d.getUTCMinutes());
+};
+const durStr = ms => {
+  const m = Math.max(0, Math.ceil(ms / 60000));
+  return m >= 60 ? Math.floor(m/60) + ' h ' + (m % 60 ? (m % 60) + ' min' : '') : m + ' min';
+};
 
-  // ── No-room setup screen ───────────────────────────────────────
-  if (!ROOM) {
-    const base = location.origin + location.pathname;
-    document.querySelector('.wrap').innerHTML = '<div class="setup"><h2>Room Display Setup</h2>' +
-      '<p style="color:#94a3b8;margin-bottom:2vh">Add <code style="color:var(--gold)">?room=RoomName</code> to the URL.</p>' +
-      '<div class="url-box"><div class="lbl">Board Room (Floor 3)</div><div class="url">' + base + '?room=Board%20Room</div></div>' +
-      '<div class="url-box"><div class="lbl">Hall 1008 (Floor 10)</div><div class="url">' + base + '?room=Hall%201008</div></div>' +
-      '<div class="url-box"><div class="lbl">Small Meeting Room (Floor 1)</div><div class="url">' + base + '?room=Small%20Meeting%20Room</div></div>' +
-      '</div>';
+/* Kuwait local time object */
+function kuwaitNow() {
+  const now  = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utcMs + 3 * 3600000);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SETUP SCREEN (no ?room= param)
+───────────────────────────────────────────────────────────── */
+if (!ROOM) {
+  const base = location.origin + location.pathname;
+  document.querySelector('.wrap').innerHTML =
+    '<div class="setup"><h2>Room Display Setup</h2>' +
+    '<p style="color:#94a3b8;margin-bottom:2vh">Add <code style="color:var(--gold)">?room=RoomName</code> to the URL.</p>' +
+    '<div class="url-box"><div class="lbl">Board Room (Floor 3)</div><div class="url">'  + base + '?room=Board%20Room</div></div>' +
+    '<div class="url-box"><div class="lbl">Hall 1008 (Floor 10)</div><div class="url">' + base + '?room=Hall%201008</div></div>' +
+    '<div class="url-box"><div class="lbl">Small Meeting Room (Floor 1)</div><div class="url">' + base + '?room=Small%20Meeting%20Room</div></div>' +
+    '</div>';
+}
+
+/* ─────────────────────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────────────────────── */
+let S = null;      // server data
+let ssActive = false;
+let manualExit = false;   // tapped to dismiss — suppress for 10 min
+let manualExitUntil = 0;
+
+/* ─────────────────────────────────────────────────────────────
+   MAIN DISPLAY — paint()
+───────────────────────────────────────────────────────────── */
+function paint() {
+  $('clock').textContent = toKuwaitHM(nowMs());
+  if (!S) return;
+
+  const t    = nowMs();
+  const cur  = S.meetings.find(m => t >= m.startMs && t < m.endMs);
+  const next = S.meetings.find(m => m.startMs > t);
+  const st   = $('status');
+
+  if (cur) {
+    st.className = 'status busy';
+    $('label').textContent  = 'Occupied';
+    $('mtitle').textContent = cur.priv ? 'Private meeting' : cur.title;
+    $('host').textContent   = cur.priv ? '' : [cur.host, cur.dept].filter(Boolean).join(' · ');
+    $('count').hidden = false;
+    $('count').textContent  = 'Ends in ' + durStr(cur.endMs - t) + '  ·  until ' + cur.end;
+    $('barBox').hidden = false;
+    $('fill').style.width = Math.min(100, (t - cur.startMs) / (cur.endMs - cur.startMs) * 100) + '%';
+    $('bStart').textContent = cur.start;
+    $('bEnd').textContent   = cur.end;
+  } else {
+    st.className = 'status free';
+    $('label').textContent  = 'Available';
+    $('mtitle').textContent = next ? 'Next: ' + (next.priv ? 'Private meeting' : next.title) : 'No more meetings today';
+    $('host').textContent   = next ? next.start + ' – ' + next.end : '';
+    $('count').hidden  = !next;
+    if (next) $('count').textContent = 'Free for ' + durStr(next.startMs - t);
+    $('barBox').hidden = true;
   }
 
-  let S = null;
+  [...$('list').children].forEach(li => {
+    const end   = Number(li.dataset.end);
+    const start = Number(li.dataset.start);
+    li.classList.toggle('past',        end   <= t);
+    li.classList.toggle('active-slot', start <= t && t < end);
+  });
+}
 
-  function paint() {
-    .textContent = toKuwaitHM(nowMs());
-    if (!S) return;
-    const t    = nowMs();
-    const cur  = S.meetings.find(m => t >= m.startMs && t < m.endMs);
-    const next = S.meetings.find(m => m.startMs > t);
-    const st   = ;
-    if (cur) {
-      st.className = 'status busy';
-      .textContent  = 'Occupied';
-      .textContent = cur.priv ? 'Private meeting' : cur.title;
-      .textContent   = cur.priv ? '' : [cur.host, cur.dept].filter(Boolean).join(' · ');
-      .hidden = false;
-      .textContent  = 'Ends in ' + durStr(cur.endMs - t) + '  ·  until ' + cur.end;
-      .hidden = false;
-      .style.width = Math.min(100, (t - cur.startMs) / (cur.endMs - cur.startMs) * 100) + '%';
-      .textContent = cur.start;
-      .textContent   = cur.end;
-    } else {
-      st.className = 'status free';
-      .textContent  = 'Available';
-      .textContent = next ? 'Next: ' + (next.priv ? 'Private meeting' : next.title) : 'No more meetings today';
-      .textContent   = next ? next.start + ' – ' + next.end : '';
-      .hidden  = !next;
-      if (next) .textContent = 'Free for ' + durStr(next.startMs - t);
-      .hidden = true;
-    }
-    [....children].forEach(li => {
-      const end   = Number(li.dataset.end);
-      const start = Number(li.dataset.start);
-      li.classList.toggle('past',        end   <= t);
-      li.classList.toggle('active-slot', start <= t && t < end);
+/* ─────────────────────────────────────────────────────────────
+   SERVER DATA → show()
+───────────────────────────────────────────────────────────── */
+function show(s) {
+  S    = s;
+  skew = s.now - Date.now();
+  $('room').textContent = s.room || ROOM;
+  $('sub').textContent  = [
+    s.today,
+    s.capacity ? 'Up to ' + s.capacity + ' people' : '',
+    s.location || ''
+  ].filter(Boolean).join('  ·  ');
+
+  const ul = $('list');
+  ul.innerHTML = '';
+  if (!s.meetings || !s.meetings.length) {
+    const li = document.createElement('li');
+    li.className = 'none'; li.style.cssText = 'border:0;background:none';
+    li.textContent = 'No meetings booked today'; ul.append(li);
+  } else {
+    s.meetings.forEach(m => {
+      const li = document.createElement('li');
+      li.dataset.end   = m.endMs;
+      li.dataset.start = m.startMs;
+      const tm = document.createElement('div'); tm.className = 'tm';
+      const nm = document.createElement('div'); nm.className = 'nm';
+      tm.textContent = m.start + ' – ' + m.end;
+      nm.textContent = m.priv ? 'Private meeting' : m.title + (m.host ? '  ·  ' + m.host : '');
+      const row = document.createElement('div'); row.append(tm, nm); li.append(row); ul.append(li);
     });
   }
+  $('live').className   = 'live';
+  $('live').textContent = 'Live';
+  paint();
+  evaluateScreensaver();
+}
 
-  function show(s) {
-    S    = s;
-    skew = s.now - Date.now();
-    .textContent = s.room || ROOM;
-    .textContent  = [s.today, s.capacity ? 'Up to ' + s.capacity + ' people' : '', s.location || ''].filter(Boolean).join('  ·  ');
-    const ul = ;
-    ul.innerHTML = '';
-    if (!s.meetings || !s.meetings.length) {
-      const li = document.createElement('li');
-      li.className = 'none'; li.style.cssText = 'border:0;background:none';
-      li.textContent = 'No meetings booked today'; ul.append(li);
-    } else {
-      s.meetings.forEach(m => {
-        const li = document.createElement('li');
-        li.dataset.end   = m.endMs;
-        li.dataset.start = m.startMs;
-        const tm = document.createElement('div');
-        const nm = document.createElement('div');
-        tm.className = 'tm'; tm.textContent = m.start + ' – ' + m.end;
-        nm.className = 'nm';
-        nm.textContent = m.priv ? 'Private meeting' : m.title + (m.host ? '  ·  ' + m.host : '');
-        const row = document.createElement('div');
-        row.append(tm, nm); li.append(row); ul.append(li);
-      });
-    }
-    .className   = 'live';
-    .textContent = 'Live';
-    paint();
+function load() {
+  if (!ROOM) return;
+  google.script.run
+    .withSuccessHandler(show)
+    .withFailureHandler(err => {
+      $('live').className   = 'live off';
+      $('live').textContent = 'Reconnecting';
+      if (!S) $('sub').textContent = String((err && err.message) || err).replace(/^(Error|Exception):\s*/, '');
+    })
+    .getRoomStatus(ROOM);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SCREENSAVER LOGIC
+   ─────────────────────────────────────────────────────────────
+
+   ACTIVATE if ANY of:
+     1. Friday (all day)               — Kuwait day = 5 (Fri)
+     2. Workday (Sat–Thu) after 18:00
+     3. Workday + zero meetings today
+
+   OVERRIDE (even if active):
+     • A meeting starts within 90 min  → switch to ALERT mode
+       (show meeting card instead of logo animation)
+
+   SUPPRESS:
+     • A meeting is happening RIGHT NOW → screensaver stays OFF
+     • User tapped to dismiss           → suppress for 10 min
+───────────────────────────────────────────────────────────── */
+
+function shouldActivateScreensaver() {
+  if (!S) return false;
+
+  const t  = nowMs();
+  const kn = kuwaitNow();
+  const day  = kn.getDay();   // 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
+  const hour = kn.getHours();
+
+  // Never show if a meeting is happening right now
+  const hasMeetingNow = S.meetings.some(m => t >= m.startMs && t < m.endMs);
+  if (hasMeetingNow) return false;
+
+  // Manual exit suppression (10 min)
+  if (t < manualExitUntil) return false;
+
+  // Rule 1 — Friday all day
+  if (day === 5) return true;
+
+  // Rule 2 — Workday after 18:00  (Sat=6, Sun=0, Mon=1, Tue=2, Wed=3, Thu=4)
+  const isWorkday = (day !== 5);   // every day except Friday
+  if (isWorkday && hour >= 18) return true;
+
+  // Rule 3 — Workday with zero meetings today
+  if (isWorkday && S.meetings.length === 0) return true;
+
+  return false;
+}
+
+/* Returns the NEXT upcoming meeting within 90 min, or null */
+function getUpcomingAlert() {
+  if (!S) return null;
+  const t   = nowMs();
+  const min90 = 90 * 60 * 1000;
+  return S.meetings.find(m => m.startMs > t && (m.startMs - t) <= min90) || null;
+}
+
+function evaluateScreensaver() {
+  if (shouldActivateScreensaver()) {
+    enterScreensaver();
+  } else {
+    exitScreensaver();
   }
+}
 
-  function load() {
-    if (!ROOM) return;
-    google.script.run
-      .withSuccessHandler(show)
-      .withFailureHandler(err => {
-        .className   = 'live off';
-        .textContent = 'Reconnecting';
-        if (!S) .textContent = String((err && err.message) || err).replace(/^(Error|Exception):\s*/, '');
-      })
-      .getRoomStatus(ROOM);
-  }
-
-  if (ROOM) {
-    .textContent = ROOM;
-    load();
-    setInterval(load,  60000);
-    setInterval(paint,  1000);
-    setTimeout(() => location.reload(), 6 * 3600e3);
-  }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCREENSAVER
-  // Rules:
-  //   - Active after 6 PM  (Sat=0, Sun=1, Mon=2, Tue=3, Wed=4, Thu=5) — Kuwait time
-  //   - Active ALL DAY on Friday (day=6 in Kuwait local)
-  //   - Overridden OFF if a meeting is scheduled at this time
-  // ══════════════════════════════════════════════════════════════
-
-  function kuwaitNow() {
-    const now = new Date();
-    // Kuwait = UTC+3
-    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-    return new Date(utcMs + 3 * 3600000);
-  }
-
-  function shouldShowScreensaver() {
-    if (!S) return false;  // wait for data before deciding
-    const kn = kuwaitNow();
-    const day  = kn.getDay();   // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
-    const hour = kn.getHours();
-
-    // Check if any meeting is currently active
-    const t = nowMs();
-    const hasMeetingNow = S.meetings.some(m => t >= m.startMs && t < m.endMs);
-    if (hasMeetingNow) return false;
-
-    // Friday (day=5 in JS, but in Kuwait Fri = 5) — all day
-    if (day === 5) return true;
-
-    // Sat–Thu: after 18:00 (6 PM)
-    if (hour >= 18) return true;
-
-    return false;
-  }
-
-  let ssActive = false;
-
-  function enterScreensaver() {
-    if (ssActive) return;
+function enterScreensaver() {
+  if (!ssActive) {
     ssActive = true;
-    .classList.add('active');
+    $('screensaver').classList.add('active');
     startMatrix();
     startLED();
   }
+  // Decide mode: alert or logo
+  updateScreensaverMode();
+}
 
-  function exitScreensaver() {
-    ssActive = false;
-    .classList.remove('active');
+function updateScreensaverMode() {
+  if (!ssActive) return;
+  const alert = getUpcomingAlert();
+  const logoEl  = $('ss-logo-mode');
+  const alertEl = $('ss-alert-mode');
+
+  if (alert) {
+    // Switch to ALERT mode
+    logoEl.classList.add('hidden');
+    alertEl.classList.add('show');
+    renderAlert(alert);
+  } else {
+    // Default logo mode
+    logoEl.classList.remove('hidden');
+    alertEl.classList.remove('show');
   }
+}
 
-  // Check every 30 seconds
-  setInterval(() => {
-    if (shouldShowScreensaver()) {
-      enterScreensaver();
-    } else {
-      exitScreensaver();
-    }
-  }, 30000);
+function renderAlert(meeting) {
+  const t      = nowMs();
+  const msLeft = Math.max(0, meeting.startMs - t);
+  const minLeft = Math.ceil(msLeft / 60000);
+  const secLeft = Math.floor(msLeft / 1000);
+  const mm = pad(Math.floor(secLeft / 60));
+  const ss = pad(secLeft % 60);
 
-  // Also check on first data load
-  const _origShow = show;
+  $('alert-timer').textContent = mm + ':' + ss;
+  $('alert-title').textContent = meeting.priv ? 'Private Meeting' : meeting.title;
+  $('alert-meta').textContent  = meeting.priv ? '' : [meeting.host, meeting.dept].filter(Boolean).join('  ·  ');
+  $('alert-time').textContent  = meeting.start + ' – ' + meeting.end;
+  $('alert-room').textContent  = ROOM;
 
-  // ── Screensaver clock ──────────────────────────────────────────
-  function tickSS() {
-    const kn = kuwaitNow();
-    const h  = pad(kn.getHours());
-    const m  = pad(kn.getMinutes());
-    const s  = pad(kn.getSeconds());
-    .textContent = h + ':' + m + ':' + s;
-    const D  = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
-    const M  = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    .textContent  = D[kn.getDay()] + ' ' + pad(kn.getDate()) + ' ' + M[kn.getMonth()] + ' ' + kn.getFullYear();
+  // Progress bar: 100% at 90 min before, 0% at start
+  const total90 = 90 * 60 * 1000;
+  const prog    = Math.max(0, Math.min(100, ((total90 - msLeft) / total90) * 100));
+  $('alert-prog').style.width = prog + '%';
+}
+
+function exitScreensaver() {
+  if (!ssActive) return;
+  ssActive = false;
+  $('screensaver').classList.remove('active');
+  $('ss-logo-mode').classList.remove('hidden');
+  $('ss-alert-mode').classList.remove('show');
+}
+
+function exitScreensaverManual() {
+  manualExitUntil = nowMs() + 10 * 60 * 1000;  // suppress 10 min
+  exitScreensaver();
+}
+$('screensaver').addEventListener('click', exitScreensaverManual);
+
+/* ─────────────────────────────────────────────────────────────
+   SCREENSAVER CLOCK (runs every second)
+───────────────────────────────────────────────────────────── */
+function tickSS() {
+  const kn = kuwaitNow();
+  const h  = pad(kn.getHours());
+  const m  = pad(kn.getMinutes());
+  const s  = pad(kn.getSeconds());
+  const timeStr = h + ':' + m + ':' + s;
+  $('ss-clk').textContent   = timeStr;
+  $('alert-clk').textContent = timeStr;
+  const D = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const M = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  $('ss-dt').textContent = D[kn.getDay()] + ' ' + pad(kn.getDate()) + ' ' + M[kn.getMonth()] + ' ' + kn.getFullYear();
+
+  // Update alert countdown every second
+  if (ssActive) {
+    const alert = getUpcomingAlert();
+    updateScreensaverMode();   // also handles mode switch when alert appears/disappears
+    if (alert) renderAlert(alert);
   }
-  tickSS();
-  setInterval(tickSS, 1000);
+}
+tickSS();
+setInterval(tickSS, 1000);
 
-  // ── Matrix rain ────────────────────────────────────────────────
-  var mc, mctx, mCols, mDrops, mSpd, mRunning = false;
-  function startMatrix() {
-    if (mRunning) return;
-    mRunning = true;
-    mc = ;
-    mctx = mc.getContext('2d');
-    mc.width  = window.innerWidth;
-    mc.height = window.innerHeight;
-    var chars = 'アイウエオカキクケコ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZابتثجحخ';
-    var fs = 14;
-    mCols  = Math.floor(mc.width / fs);
-    mDrops = []; mSpd = [];
-    for (var i = 0; i < mCols; i++) {
-      mDrops[i] = Math.random() * -(mc.height / fs);
-      mSpd[i]   = Math.random() * 0.3 + 0.15;
-    }
-    function drawM() {
-      if (!ssActive) { mRunning = false; return; }
-      mctx.fillStyle = 'rgba(11,26,61,0.15)';
-      mctx.fillRect(0, 0, mc.width, mc.height);
-      for (var i = 0; i < mCols; i++) {
-        var y = Math.floor(mDrops[i]) * fs;
-        var x = i * fs;
-        if (y < -fs || y > mc.height + fs) { mDrops[i] += mSpd[i]; continue; }
-        var ch = chars[Math.floor(Math.random() * chars.length)];
-        mctx.font = fs + 'px monospace';
-        mctx.fillStyle = 'rgba(210,230,255,.95)'; mctx.fillText(ch, x, y);
-        if (mDrops[i] > 1) { mctx.fillStyle = 'rgba(80,140,255,.55)'; mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y - fs); }
-        if (mDrops[i] > 2) { mctx.fillStyle = 'rgba(40,90,200,.28)'; mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y - fs*2); }
-        if (mDrops[i] > 3) { mctx.fillStyle = 'rgba(20,60,150,.12)'; mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y - fs*3); }
-        mDrops[i] += mSpd[i];
-        if (y > mc.height && Math.random() > .978) mDrops[i] = Math.random() * -40;
-      }
-      requestAnimationFrame(drawM);
-    }
-    drawM();
+/* ─────────────────────────────────────────────────────────────
+   RE-EVALUATE every 30 s (catches time changes & new data)
+───────────────────────────────────────────────────────────── */
+setInterval(evaluateScreensaver, 30000);
+
+/* ─────────────────────────────────────────────────────────────
+   MATRIX RAIN ANIMATION
+───────────────────────────────────────────────────────────── */
+var mRunning = false;
+function startMatrix() {
+  if (mRunning) return;
+  mRunning = true;
+  var mc   = $('ss-canvas');
+  var mctx = mc.getContext('2d');
+  mc.width  = window.innerWidth;
+  mc.height = window.innerHeight;
+  var chars = 'アイウエオカキクケコ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZابتثجحخ';
+  var fs = 14;
+  var cols  = Math.floor(mc.width / fs);
+  var drops = [], spd = [];
+  for (var i = 0; i < cols; i++) {
+    drops[i] = Math.random() * -(mc.height / fs);
+    spd[i]   = Math.random() * 0.3 + 0.15;
   }
+  function drawM() {
+    if (!ssActive) { mRunning = false; return; }
+    mctx.fillStyle = 'rgba(11,26,61,0.15)';
+    mctx.fillRect(0, 0, mc.width, mc.height);
+    for (var i = 0; i < cols; i++) {
+      var y = Math.floor(drops[i]) * fs;
+      var x = i * fs;
+      if (y < -fs || y > mc.height + fs) { drops[i] += spd[i]; continue; }
+      var ch = chars[Math.floor(Math.random() * chars.length)];
+      mctx.font = fs + 'px monospace';
+      mctx.fillStyle = 'rgba(210,230,255,.95)'; mctx.fillText(ch, x, y);
+      if (drops[i] > 1) { mctx.fillStyle = 'rgba(80,140,255,.55)'; mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y-fs); }
+      if (drops[i] > 2) { mctx.fillStyle = 'rgba(40,90,200,.28)';  mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y-fs*2); }
+      if (drops[i] > 3) { mctx.fillStyle = 'rgba(20,60,150,.12)';  mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y-fs*3); }
+      drops[i] += spd[i];
+      if (y > mc.height && Math.random() > .978) drops[i] = Math.random() * -40;
+    }
+    requestAnimationFrame(drawM);
+  }
+  drawM();
+}
 
-  // ── LED border on square logo ──────────────────────────────────
-  var ledCanvas, ledCtx, ledPath, ledOffset = 0, ledRunning = false;
-  function startLED() {
-    if (ledRunning) return;
-    ledRunning = true;
-    ledCanvas = ;
-    ledCtx    = ledCanvas.getContext('2d');
-    var W = 130, H = 130, PAD = 12, R = 12;
-    var x0 = PAD, y0 = PAD, x1 = W - PAD, y1 = H - PAD;
-    // Build perimeter path
-    ledPath = [];
-    var step = 2;
-    for (var x = x0+R; x <= x1-R; x += step) ledPath.push({x:x, y:y0});
-    for (var a = 270; a <= 360; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x1-R+R*Math.cos(r), y:y0+R+R*Math.sin(r)}); }
-    for (var y = y0+R; y <= y1-R; y += step) ledPath.push({x:x1, y:y});
-    for (var a = 0; a <= 90; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x1-R+R*Math.cos(r), y:y1-R+R*Math.sin(r)}); }
-    for (var x = x1-R; x >= x0+R; x -= step) ledPath.push({x:x, y:y1});
-    for (var a = 90; a <= 180; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x0+R+R*Math.cos(r), y:y1-R+R*Math.sin(r)}); }
-    for (var y = y1-R; y >= y0+R; y -= step) ledPath.push({x:x0, y:y});
-    for (var a = 180; a <= 270; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x0+R+R*Math.cos(r), y:y0+R+R*Math.sin(r)}); }
+/* ─────────────────────────────────────────────────────────────
+   LED BORDER ANIMATION
+───────────────────────────────────────────────────────────── */
+var ledRunning = false, ledPath, ledOffset = 0;
+function startLED() {
+  if (ledRunning) return;
+  ledRunning = true;
+  var lc   = $('ss-led');
+  var lctx = lc.getContext('2d');
+  var W = 130, H = 130, PAD = 12, R = 12;
+  var x0 = PAD, y0 = PAD, x1 = W-PAD, y1 = H-PAD;
+  ledPath = [];
+  var step = 2;
+  for (var x = x0+R; x <= x1-R; x += step) ledPath.push({x:x,y:y0});
+  for (var a = 270; a <= 360; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x1-R+R*Math.cos(r),y:y0+R+R*Math.sin(r)}); }
+  for (var y = y0+R; y <= y1-R; y += step) ledPath.push({x:x1,y:y});
+  for (var a = 0; a <= 90; a += 4)   { var r=a*Math.PI/180; ledPath.push({x:x1-R+R*Math.cos(r),y:y1-R+R*Math.sin(r)}); }
+  for (var x = x1-R; x >= x0+R; x -= step) ledPath.push({x:x,y:y1});
+  for (var a = 90; a <= 180; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x0+R+R*Math.cos(r),y:y1-R+R*Math.sin(r)}); }
+  for (var y = y1-R; y >= y0+R; y -= step) ledPath.push({x:x0,y:y});
+  for (var a = 180; a <= 270; a += 4){ var r=a*Math.PI/180; ledPath.push({x:x0+R+R*Math.cos(r),y:y0+R+R*Math.sin(r)}); }
 
-    var total = ledPath.length;
-    var TAIL  = Math.floor(total * 0.18);
+  var total = ledPath.length;
+  var TAIL  = Math.floor(total * 0.18);
 
-    function drawLED() {
-      if (!ssActive) { ledRunning = false; return; }
-      ledCtx.clearRect(0, 0, W, H);
-      // dim background dots
-      for (var i = 0; i < total; i++) {
-        var p = ledPath[i];
-        ledCtx.beginPath(); ledCtx.arc(p.x, p.y, 1.2, 0, Math.PI*2);
-        ledCtx.fillStyle = 'rgba(100,150,255,0.08)'; ledCtx.fill();
-      }
-      // two running LED heads
-      var heads = [ledOffset, (ledOffset + Math.floor(total/2)) % total];
-      for (var h = 0; h < heads.length; h++) {
-        var head = heads[h];
-        for (var t = 0; t < TAIL; t++) {
-          var idx = (head - t + total) % total;
-          var p   = ledPath[idx];
-          var frac = 1 - (t / TAIL);
-          var sz, r2, g2, b2, a2;
-          if (t === 0) { r2=255; g2=220; b2=80; a2=1; sz=3.5; }
-          else if (frac > 0.7) { var f=(frac-0.7)/0.3; r2=Math.floor(255-f*50); g2=Math.floor(220+f*35); b2=Math.floor(80+f*175); a2=frac; sz=2.5; }
-          else { r2=Math.floor(80+frac*80); g2=Math.floor(140+frac*80); b2=255; a2=frac*0.9; sz=t<3?2:1.8; }
-          if (t < 8) {
-            ledCtx.beginPath(); ledCtx.arc(p.x, p.y, sz*2.5, 0, Math.PI*2);
-            var grd = ledCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, sz*2.5);
-            grd.addColorStop(0, 'rgba('+r2+','+g2+','+b2+','+(a2*0.4)+')');
-            grd.addColorStop(1, 'rgba('+r2+','+g2+','+b2+',0)');
-            ledCtx.fillStyle = grd; ledCtx.fill();
-          }
-          ledCtx.beginPath(); ledCtx.arc(p.x, p.y, sz, 0, Math.PI*2);
-          ledCtx.fillStyle = 'rgba('+r2+','+g2+','+b2+','+a2+')'; ledCtx.fill();
+  function drawLED() {
+    if (!ssActive) { ledRunning = false; return; }
+    lctx.clearRect(0, 0, W, H);
+    for (var i = 0; i < total; i++) {
+      var p = ledPath[i];
+      lctx.beginPath(); lctx.arc(p.x, p.y, 1.2, 0, Math.PI*2);
+      lctx.fillStyle = 'rgba(100,150,255,0.08)'; lctx.fill();
+    }
+    var heads = [ledOffset, (ledOffset + Math.floor(total/2)) % total];
+    for (var h = 0; h < heads.length; h++) {
+      var head = heads[h];
+      for (var t = 0; t < TAIL; t++) {
+        var idx  = (head - t + total) % total;
+        var p    = ledPath[idx];
+        var frac = 1 - (t / TAIL);
+        var sz, r2, g2, b2, a2;
+        if (t === 0) { r2=255;g2=220;b2=80;a2=1;sz=3.5; }
+        else if (frac > 0.7) { var f=(frac-0.7)/0.3; r2=Math.floor(255-f*50);g2=Math.floor(220+f*35);b2=Math.floor(80+f*175);a2=frac;sz=2.5; }
+        else { r2=Math.floor(80+frac*80);g2=Math.floor(140+frac*80);b2=255;a2=frac*0.9;sz=t<3?2:1.8; }
+        if (t < 8) {
+          lctx.beginPath(); lctx.arc(p.x,p.y,sz*2.5,0,Math.PI*2);
+          var grd=lctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz*2.5);
+          grd.addColorStop(0,'rgba('+r2+','+g2+','+b2+','+(a2*0.4)+')');
+          grd.addColorStop(1,'rgba('+r2+','+g2+','+b2+',0)');
+          lctx.fillStyle=grd; lctx.fill();
         }
+        lctx.beginPath(); lctx.arc(p.x,p.y,sz,0,Math.PI*2);
+        lctx.fillStyle='rgba('+r2+','+g2+','+b2+','+a2+')'; lctx.fill();
       }
-      ledOffset = (ledOffset + 1) % total;
-      setTimeout(drawLED, 18);
     }
-    drawLED();
+    ledOffset = (ledOffset + 1) % total;
+    setTimeout(drawLED, 18);
   }
+  drawLED();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BOOT
+───────────────────────────────────────────────────────────── */
+if (ROOM) {
+  $('room').textContent = ROOM;
+  load();
+  setInterval(load,  60000);
+  setInterval(paint,  1000);
+  setTimeout(() => location.reload(), 6 * 3600e3);
+}
 </script>
 </body>
 </html>
