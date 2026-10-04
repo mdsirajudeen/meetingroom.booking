@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Room Display – Kuwait Hospital</title>
   <style>
-    :root { --navy:#1e2d5c; --gold:#c9a961; --busy:#b91c1c; --free:#166534; }
+    :root { --navy:#1e2d5c; --gold:#c9a961; --busy:#b91c1c; --free:#166634; }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body { margin: 0; background: #0b0f17; color: #fff;
@@ -64,7 +64,7 @@
     .foot  { text-align: center; font-size: 12px; color: #475569;
              border-top: 1px solid #1e293b; padding-top: 1vh; }
 
-    /* ── QR / URL hint (shown when no room param) ── */
+    /* ── SETUP SCREEN ── */
     .setup { margin: auto; text-align: center; padding: 4vh; }
     .setup h2 { color: var(--gold); font-size: clamp(20px, 4vh, 36px); margin-bottom: 2vh; }
     .url-box { background: #1a2332; border-radius: 14px; padding: 2vh 3vw; margin: 1.5vh 0;
@@ -73,12 +73,74 @@
                     text-transform: uppercase; margin-bottom: 6px; }
     .url-box .url { font-size: clamp(12px, 1.8vh, 16px); color: #e2e8f0;
                     word-break: break-all; font-family: monospace; }
+
+    /* ── SCREENSAVER ── */
+    #screensaver {
+      display: none;
+      position: fixed; inset: 0; z-index: 9999;
+      background: #0b1a3d;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    #screensaver.active { display: flex; }
+    #ss-canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .35; }
+    #ss-vignette {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 65% 65% at 50% 48%, rgba(11,26,61,0) 20%, rgba(11,26,61,.88) 100%);
+      pointer-events: none;
+    }
+    .ss-content { position: relative; z-index: 5; display: flex; flex-direction: column; align-items: center; }
+    .ss-logo-wrap { position: relative; width: 130px; height: 130px; display: flex; align-items: center; justify-content: center; }
+    #ss-led { position: absolute; top: 0; left: 0; width: 130px; height: 130px; }
+    .ss-logo-sq {
+      width: 106px; height: 106px; background: #fff; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .ss-logo-sq img { width: 90px; height: 90px; object-fit: contain; display: block; }
+    .ss-name { color: #fff; font-size: 19px; font-weight: 500; letter-spacing: 4px; margin-top: 20px; text-align: center; text-shadow: 0 0 30px rgba(100,160,255,.4); }
+    .ss-sub  { color: rgba(120,170,255,.45); font-size: 9.5px; letter-spacing: 3.5px; margin-top: 5px; text-align: center; }
+    .ss-div  { width: 180px; height: 1px; background: linear-gradient(90deg, transparent, rgba(100,160,255,.35), transparent); margin: 16px auto 0; }
+    .ss-clk  { color: #c8e0ff; font-size: 40px; font-weight: 200; letter-spacing: 6px; font-family: monospace; margin-top: 16px; text-align: center; text-shadow: 0 0 20px rgba(100,160,255,.4); }
+    .ss-dt   { color: rgba(100,160,255,.4); font-size: 10px; letter-spacing: 3px; font-family: monospace; margin-top: 6px; text-align: center; }
+    .ss-corner { position: absolute; z-index: 6; width: 16px; height: 16px; border-color: rgba(100,160,255,.4); border-style: solid; }
+    .ss-tl { top: 14px; left: 14px; border-width: 1.5px 0 0 1.5px; }
+    .ss-tr { top: 14px; right: 14px; border-width: 1.5px 1.5px 0 0; }
+    .ss-bl { bottom: 14px; left: 14px; border-width: 0 0 1.5px 1.5px; }
+    .ss-br { bottom: 14px; right: 14px; border-width: 0 1.5px 1.5px 0; }
+    .ss-hint { position: absolute; bottom: 20px; color: rgba(100,160,255,.3); font-size: 11px; letter-spacing: 1px; }
   </style>
 </head>
 <body>
-<div class="wrap">
 
-  <!-- TOP BAR -->
+<!-- ══ SCREENSAVER ══════════════════════════════════════════════ -->
+<div id="screensaver" onclick="exitScreensaver()">
+  <div class="ss-corner ss-tl"></div>
+  <div class="ss-corner ss-tr"></div>
+  <div class="ss-corner ss-bl"></div>
+  <div class="ss-corner ss-br"></div>
+  <canvas id="ss-canvas"></canvas>
+  <div id="ss-vignette"></div>
+  <div class="ss-content">
+    <div class="ss-logo-wrap">
+      <canvas id="ss-led" width="130" height="130"></canvas>
+      <div class="ss-logo-sq">
+        <img src="logo.png" alt="Kuwait Hospital" onerror="this.style.display='none';this.parentNode.innerHTML='<div style=\'width:60px;height:60px;position:relative\'><div style=\'position:absolute;width:60px;height:16px;background:#0b4a8f;top:50%;left:0;transform:translateY(-50%);border-radius:2px\'></div><div style=\'position:absolute;width:16px;height:60px;background:#0b4a8f;left:50%;top:0;transform:translateX(-50%);border-radius:2px\'></div></div>'">
+      </div>
+    </div>
+    <div class="ss-name">KUWAIT HOSPITAL</div>
+    <div class="ss-sub">MEETING ROOM BOOKING</div>
+    <div class="ss-div"></div>
+    <div class="ss-clk" id="ss-clk">--:--:--</div>
+    <div class="ss-dt"  id="ss-dt">--- -- --- ----</div>
+  </div>
+  <div class="ss-hint">Tap anywhere to return</div>
+</div>
+
+<!-- ══ MAIN DISPLAY ════════════════════════════════════════════ -->
+<div class="wrap">
   <div class="top">
     <div class="brand">
       <span class="logo"><img src="logo.png" alt="Kuwait Hospital logo"></span>
@@ -93,7 +155,6 @@
     </div>
   </div>
 
-  <!-- STATUS BANNER -->
   <section class="status free" id="status" aria-live="polite">
     <div class="label"  id="label">Available</div>
     <div class="mtitle" id="mtitle"></div>
@@ -105,7 +166,6 @@
     </div>
   </section>
 
-  <!-- TODAY'S SCHEDULE -->
   <section class="up">
     <h2>Today's schedule</h2>
     <ul id="list">
@@ -121,21 +181,16 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script>
-  // ── helpers ────────────────────────────────────────────────────
   const $   = id => document.getElementById(id);
   const pad = n  => String(n).padStart(2, '0');
-
-  // Room name from URL  e.g. ?room=Board%20Room
   const ROOM = (new URLSearchParams(location.search).get('room') || '').trim();
 
-  // Kuwait time offset (+3 h).  Works even when device clock is wrong
-  // because we apply skew from the server's reported timestamp.
   let skew = 0;
   const nowMs  = () => Date.now() + skew;
   const toKuwaitHM = ms => {
     const d = new Date(ms);
-    const h = (d.getUTCHours()   + 3) % 24;   // +03:00
-    const m =  d.getUTCMinutes();
+    const h = (d.getUTCHours() + 3) % 24;
+    const m = d.getUTCMinutes();
     return pad(h) + ':' + pad(m);
   };
   const durStr = ms => {
@@ -143,68 +198,47 @@
     return m >= 60 ? Math.floor(m/60) + ' h ' + (m%60 ? (m%60) + ' min' : '') : m + ' min';
   };
 
-  // ── no-room setup screen ───────────────────────────────────────
+  // ── No-room setup screen ───────────────────────────────────────
   if (!ROOM) {
     const base = location.origin + location.pathname;
-    document.querySelector('.wrap').innerHTML = `
-      <div class="setup">
-        <h2>Room Display Setup</h2>
-        <p style="color:#94a3b8;margin-bottom:2vh">
-          Add <code style="color:var(--gold)">?room=RoomName</code> to the URL.<br>
-          Use one of the links below on each room's tablet:
-        </p>
-        <div class="url-box">
-          <div class="lbl">Board Room (Floor 3)</div>
-          <div class="url">${base}?room=Board%20Room</div>
-        </div>
-        <div class="url-box">
-          <div class="lbl">Training Room (Floor 2)</div>
-          <div class="url">${base}?room=Training%20Room</div>
-        </div>
-        <div class="url-box">
-          <div class="lbl">Small Meeting Room (Floor 1)</div>
-          <div class="url">${base}?room=Small%20Meeting%20Room</div>
-        </div>
-      </div>`;
+    document.querySelector('.wrap').innerHTML = '<div class="setup"><h2>Room Display Setup</h2>' +
+      '<p style="color:#94a3b8;margin-bottom:2vh">Add <code style="color:var(--gold)">?room=RoomName</code> to the URL.</p>' +
+      '<div class="url-box"><div class="lbl">Board Room (Floor 3)</div><div class="url">' + base + '?room=Board%20Room</div></div>' +
+      '<div class="url-box"><div class="lbl">Hall 1008 (Floor 10)</div><div class="url">' + base + '?room=Hall%201008</div></div>' +
+      '<div class="url-box"><div class="lbl">Small Meeting Room (Floor 1)</div><div class="url">' + base + '?room=Small%20Meeting%20Room</div></div>' +
+      '</div>';
   }
 
-  // ── state ──────────────────────────────────────────────────────
   let S = null;
 
-  // ── paint (runs every second) ──────────────────────────────────
   function paint() {
-    // clock
-    $('clock').textContent = toKuwaitHM(nowMs());
+    .textContent = toKuwaitHM(nowMs());
     if (!S) return;
-
     const t    = nowMs();
     const cur  = S.meetings.find(m => t >= m.startMs && t < m.endMs);
     const next = S.meetings.find(m => m.startMs > t);
-    const st   = $('status');
-
+    const st   = ;
     if (cur) {
-      st.className       = 'status busy';
-      $('label').textContent  = 'Occupied';
-      $('mtitle').textContent = cur.priv ? 'Private meeting' : cur.title;
-      $('host').textContent   = cur.priv ? '' : [cur.host, cur.dept].filter(Boolean).join(' · ');
-      $('count').hidden  = false;
-      $('count').textContent  = 'Ends in ' + durStr(cur.endMs - t) + '  ·  until ' + cur.end;
-      $('barBox').hidden = false;
-      $('fill').style.width   = Math.min(100, (t - cur.startMs) / (cur.endMs - cur.startMs) * 100) + '%';
-      $('bStart').textContent = cur.start;
-      $('bEnd').textContent   = cur.end;
+      st.className = 'status busy';
+      .textContent  = 'Occupied';
+      .textContent = cur.priv ? 'Private meeting' : cur.title;
+      .textContent   = cur.priv ? '' : [cur.host, cur.dept].filter(Boolean).join(' · ');
+      .hidden = false;
+      .textContent  = 'Ends in ' + durStr(cur.endMs - t) + '  ·  until ' + cur.end;
+      .hidden = false;
+      .style.width = Math.min(100, (t - cur.startMs) / (cur.endMs - cur.startMs) * 100) + '%';
+      .textContent = cur.start;
+      .textContent   = cur.end;
     } else {
-      st.className       = 'status free';
-      $('label').textContent  = 'Available';
-      $('mtitle').textContent = next ? 'Next: ' + (next.priv ? 'Private meeting' : next.title) : 'No more meetings today';
-      $('host').textContent   = next ? next.start + ' – ' + next.end : '';
-      $('count').hidden  = !next;
-      if (next) $('count').textContent = 'Free for ' + durStr(next.startMs - t);
-      $('barBox').hidden = true;
+      st.className = 'status free';
+      .textContent  = 'Available';
+      .textContent = next ? 'Next: ' + (next.priv ? 'Private meeting' : next.title) : 'No more meetings today';
+      .textContent   = next ? next.start + ' – ' + next.end : '';
+      .hidden  = !next;
+      if (next) .textContent = 'Free for ' + durStr(next.startMs - t);
+      .hidden = true;
     }
-
-    // highlight active row in schedule
-    [...$('list').children].forEach(li => {
+    [....children].forEach(li => {
       const end   = Number(li.dataset.end);
       const start = Number(li.dataset.start);
       li.classList.toggle('past',        end   <= t);
@@ -212,20 +246,12 @@
     });
   }
 
-  // ── render data from server ────────────────────────────────────
   function show(s) {
     S    = s;
     skew = s.now - Date.now();
-
-    $('room').textContent = s.room || ROOM;
-    $('sub').textContent  = [
-      s.today,
-      s.capacity ? 'Up to ' + s.capacity + ' people' : '',
-      s.location  ? s.location : ''
-    ].filter(Boolean).join('  ·  ');
-
-    // build schedule list
-    const ul = $('list');
+    .textContent = s.room || ROOM;
+    .textContent  = [s.today, s.capacity ? 'Up to ' + s.capacity + ' people' : '', s.location || ''].filter(Boolean).join('  ·  ');
+    const ul = ;
     ul.innerHTML = '';
     if (!s.meetings || !s.meetings.length) {
       const li = document.createElement('li');
@@ -233,49 +259,218 @@
       li.textContent = 'No meetings booked today'; ul.append(li);
     } else {
       s.meetings.forEach(m => {
-        const li  = document.createElement('li');
+        const li = document.createElement('li');
         li.dataset.end   = m.endMs;
         li.dataset.start = m.startMs;
-        const tm  = document.createElement('div');
-        const nm  = document.createElement('div');
+        const tm = document.createElement('div');
+        const nm = document.createElement('div');
         tm.className = 'tm'; tm.textContent = m.start + ' – ' + m.end;
         nm.className = 'nm';
-        nm.textContent = m.priv
-          ? 'Private meeting'
-          : m.title + (m.host ? '  ·  ' + m.host : '');
+        nm.textContent = m.priv ? 'Private meeting' : m.title + (m.host ? '  ·  ' + m.host : '');
         const row = document.createElement('div');
         row.append(tm, nm); li.append(row); ul.append(li);
       });
     }
-
-    $('live').className   = 'live';
-    $('live').textContent = 'Live';
+    .className   = 'live';
+    .textContent = 'Live';
     paint();
   }
 
-  // ── fetch from Apps Script ─────────────────────────────────────
   function load() {
     if (!ROOM) return;
     google.script.run
       .withSuccessHandler(show)
       .withFailureHandler(err => {
-        $('live').className   = 'live off';
-        $('live').textContent = 'Reconnecting';
-        if (!S) {
-          $('sub').textContent = String((err && err.message) || err)
-            .replace(/^(Error|Exception):\s*/, '');
-        }
+        .className   = 'live off';
+        .textContent = 'Reconnecting';
+        if (!S) .textContent = String((err && err.message) || err).replace(/^(Error|Exception):\s*/, '');
       })
       .getRoomStatus(ROOM);
   }
 
-  // ── start ──────────────────────────────────────────────────────
   if (ROOM) {
-    $('room').textContent = ROOM;   // show name instantly before server reply
+    .textContent = ROOM;
     load();
-    setInterval(load,  60000);      // refresh data every 60 s
-    setInterval(paint,  1000);      // tick clock every second
-    setTimeout(() => location.reload(), 6 * 3600e3);  // full reload every 6 h
+    setInterval(load,  60000);
+    setInterval(paint,  1000);
+    setTimeout(() => location.reload(), 6 * 3600e3);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // SCREENSAVER
+  // Rules:
+  //   - Active after 6 PM  (Sat=0, Sun=1, Mon=2, Tue=3, Wed=4, Thu=5) — Kuwait time
+  //   - Active ALL DAY on Friday (day=6 in Kuwait local)
+  //   - Overridden OFF if a meeting is scheduled at this time
+  // ══════════════════════════════════════════════════════════════
+
+  function kuwaitNow() {
+    const now = new Date();
+    // Kuwait = UTC+3
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    return new Date(utcMs + 3 * 3600000);
+  }
+
+  function shouldShowScreensaver() {
+    if (!S) return false;  // wait for data before deciding
+    const kn = kuwaitNow();
+    const day  = kn.getDay();   // 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+    const hour = kn.getHours();
+
+    // Check if any meeting is currently active
+    const t = nowMs();
+    const hasMeetingNow = S.meetings.some(m => t >= m.startMs && t < m.endMs);
+    if (hasMeetingNow) return false;
+
+    // Friday (day=5 in JS, but in Kuwait Fri = 5) — all day
+    if (day === 5) return true;
+
+    // Sat–Thu: after 18:00 (6 PM)
+    if (hour >= 18) return true;
+
+    return false;
+  }
+
+  let ssActive = false;
+
+  function enterScreensaver() {
+    if (ssActive) return;
+    ssActive = true;
+    .classList.add('active');
+    startMatrix();
+    startLED();
+  }
+
+  function exitScreensaver() {
+    ssActive = false;
+    .classList.remove('active');
+  }
+
+  // Check every 30 seconds
+  setInterval(() => {
+    if (shouldShowScreensaver()) {
+      enterScreensaver();
+    } else {
+      exitScreensaver();
+    }
+  }, 30000);
+
+  // Also check on first data load
+  const _origShow = show;
+
+  // ── Screensaver clock ──────────────────────────────────────────
+  function tickSS() {
+    const kn = kuwaitNow();
+    const h  = pad(kn.getHours());
+    const m  = pad(kn.getMinutes());
+    const s  = pad(kn.getSeconds());
+    .textContent = h + ':' + m + ':' + s;
+    const D  = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    const M  = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    .textContent  = D[kn.getDay()] + ' ' + pad(kn.getDate()) + ' ' + M[kn.getMonth()] + ' ' + kn.getFullYear();
+  }
+  tickSS();
+  setInterval(tickSS, 1000);
+
+  // ── Matrix rain ────────────────────────────────────────────────
+  var mc, mctx, mCols, mDrops, mSpd, mRunning = false;
+  function startMatrix() {
+    if (mRunning) return;
+    mRunning = true;
+    mc = ;
+    mctx = mc.getContext('2d');
+    mc.width  = window.innerWidth;
+    mc.height = window.innerHeight;
+    var chars = 'アイウエオカキクケコ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZابتثجحخ';
+    var fs = 14;
+    mCols  = Math.floor(mc.width / fs);
+    mDrops = []; mSpd = [];
+    for (var i = 0; i < mCols; i++) {
+      mDrops[i] = Math.random() * -(mc.height / fs);
+      mSpd[i]   = Math.random() * 0.3 + 0.15;
+    }
+    function drawM() {
+      if (!ssActive) { mRunning = false; return; }
+      mctx.fillStyle = 'rgba(11,26,61,0.15)';
+      mctx.fillRect(0, 0, mc.width, mc.height);
+      for (var i = 0; i < mCols; i++) {
+        var y = Math.floor(mDrops[i]) * fs;
+        var x = i * fs;
+        if (y < -fs || y > mc.height + fs) { mDrops[i] += mSpd[i]; continue; }
+        var ch = chars[Math.floor(Math.random() * chars.length)];
+        mctx.font = fs + 'px monospace';
+        mctx.fillStyle = 'rgba(210,230,255,.95)'; mctx.fillText(ch, x, y);
+        if (mDrops[i] > 1) { mctx.fillStyle = 'rgba(80,140,255,.55)'; mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y - fs); }
+        if (mDrops[i] > 2) { mctx.fillStyle = 'rgba(40,90,200,.28)'; mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y - fs*2); }
+        if (mDrops[i] > 3) { mctx.fillStyle = 'rgba(20,60,150,.12)'; mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y - fs*3); }
+        mDrops[i] += mSpd[i];
+        if (y > mc.height && Math.random() > .978) mDrops[i] = Math.random() * -40;
+      }
+      requestAnimationFrame(drawM);
+    }
+    drawM();
+  }
+
+  // ── LED border on square logo ──────────────────────────────────
+  var ledCanvas, ledCtx, ledPath, ledOffset = 0, ledRunning = false;
+  function startLED() {
+    if (ledRunning) return;
+    ledRunning = true;
+    ledCanvas = ;
+    ledCtx    = ledCanvas.getContext('2d');
+    var W = 130, H = 130, PAD = 12, R = 12;
+    var x0 = PAD, y0 = PAD, x1 = W - PAD, y1 = H - PAD;
+    // Build perimeter path
+    ledPath = [];
+    var step = 2;
+    for (var x = x0+R; x <= x1-R; x += step) ledPath.push({x:x, y:y0});
+    for (var a = 270; a <= 360; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x1-R+R*Math.cos(r), y:y0+R+R*Math.sin(r)}); }
+    for (var y = y0+R; y <= y1-R; y += step) ledPath.push({x:x1, y:y});
+    for (var a = 0; a <= 90; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x1-R+R*Math.cos(r), y:y1-R+R*Math.sin(r)}); }
+    for (var x = x1-R; x >= x0+R; x -= step) ledPath.push({x:x, y:y1});
+    for (var a = 90; a <= 180; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x0+R+R*Math.cos(r), y:y1-R+R*Math.sin(r)}); }
+    for (var y = y1-R; y >= y0+R; y -= step) ledPath.push({x:x0, y:y});
+    for (var a = 180; a <= 270; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x0+R+R*Math.cos(r), y:y0+R+R*Math.sin(r)}); }
+
+    var total = ledPath.length;
+    var TAIL  = Math.floor(total * 0.18);
+
+    function drawLED() {
+      if (!ssActive) { ledRunning = false; return; }
+      ledCtx.clearRect(0, 0, W, H);
+      // dim background dots
+      for (var i = 0; i < total; i++) {
+        var p = ledPath[i];
+        ledCtx.beginPath(); ledCtx.arc(p.x, p.y, 1.2, 0, Math.PI*2);
+        ledCtx.fillStyle = 'rgba(100,150,255,0.08)'; ledCtx.fill();
+      }
+      // two running LED heads
+      var heads = [ledOffset, (ledOffset + Math.floor(total/2)) % total];
+      for (var h = 0; h < heads.length; h++) {
+        var head = heads[h];
+        for (var t = 0; t < TAIL; t++) {
+          var idx = (head - t + total) % total;
+          var p   = ledPath[idx];
+          var frac = 1 - (t / TAIL);
+          var sz, r2, g2, b2, a2;
+          if (t === 0) { r2=255; g2=220; b2=80; a2=1; sz=3.5; }
+          else if (frac > 0.7) { var f=(frac-0.7)/0.3; r2=Math.floor(255-f*50); g2=Math.floor(220+f*35); b2=Math.floor(80+f*175); a2=frac; sz=2.5; }
+          else { r2=Math.floor(80+frac*80); g2=Math.floor(140+frac*80); b2=255; a2=frac*0.9; sz=t<3?2:1.8; }
+          if (t < 8) {
+            ledCtx.beginPath(); ledCtx.arc(p.x, p.y, sz*2.5, 0, Math.PI*2);
+            var grd = ledCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, sz*2.5);
+            grd.addColorStop(0, 'rgba('+r2+','+g2+','+b2+','+(a2*0.4)+')');
+            grd.addColorStop(1, 'rgba('+r2+','+g2+','+b2+',0)');
+            ledCtx.fillStyle = grd; ledCtx.fill();
+          }
+          ledCtx.beginPath(); ledCtx.arc(p.x, p.y, sz, 0, Math.PI*2);
+          ledCtx.fillStyle = 'rgba('+r2+','+g2+','+b2+','+a2+')'; ledCtx.fill();
+        }
+      }
+      ledOffset = (ledOffset + 1) % total;
+      setTimeout(drawLED, 18);
+    }
+    drawLED();
   }
 </script>
 </body>
