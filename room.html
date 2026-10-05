@@ -13,12 +13,12 @@
     :root { --bg:#0b1a3d; --ink:#c8e0ff; --muted:#8fb0dd; --line:rgba(100,160,255,.18);
             --card:rgba(30,60,130,.28); --gold:#c9a961; --busy:#b91c1c; --free:#166634; }
     * { box-sizing: border-box; }
-    html, body { height: 100%; }
+    html, body { height: 100%; overflow: hidden; }   /* the tablet page never scrolls */
     body { margin: 0; color: #fff; background: var(--bg);
            background-image: radial-gradient(ellipse 80% 70% at 50% 35%, #142a5c 0%, var(--bg) 70%);
            background-attachment: fixed;
            font-family: "Open Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
-    .wrap { min-height: 100%; display: flex; flex-direction: column; padding: 2.4vmin 3vmin; gap: 2.2vmin; }
+    .wrap { height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding: 2.4vmin 3vmin; gap: 2.2vmin; }
 
     /* ── TOP BAR ── */
     .top { display: flex; align-items: center; justify-content: space-between; gap: 2vmin;
@@ -42,34 +42,37 @@
     @keyframes p { 50% { opacity:.35; } }
 
     /* ── STATUS BANNER ── */
-    .status { border-radius: clamp(20px,3.5vmin,40px); padding: 4vmin 3vmin; text-align: center;
+    .top, .status, .foot { flex-shrink: 0; }
+    .status { border-radius: clamp(20px,3.5vmin,40px); padding: 2vmin 3vmin 1.8vmin; text-align: center;
               transition: background .4s; border: 1px solid rgba(255,255,255,.12);
               box-shadow: 0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
     .status.busy { background: linear-gradient(180deg,#c42222 0%,#991515 100%); }
     .status.free { background: linear-gradient(180deg,#1a7a3e 0%,#13592d 100%); }
-    .label   { font-size: clamp(48px,14vmin,150px); font-weight: 800;
-               text-transform: uppercase; line-height: 1.05; letter-spacing: .04em; }
-    .mtitle  { font-size: clamp(22px,5vmin,52px); font-weight: 600; margin-top: 1.2vmin; word-break: break-word; }
-    .host    { font-size: clamp(16px,3.2vmin,32px); opacity: .9; }
-    .count   { display: inline-block; margin-top: 2vmin; background: rgba(0,0,0,.22);
-               padding: 1vmin 3vmin; border-radius: 99px;
+    .label   { font-size: clamp(40px,9.5vmin,104px); font-weight: 800;
+               text-transform: uppercase; line-height: 1; letter-spacing: .04em; }
+    .mtitle  { font-size: clamp(20px,4vmin,44px); font-weight: 600; margin-top: .4vmin; line-height: 1.2; word-break: break-word; }
+    .host    { font-size: clamp(15px,2.8vmin,28px); opacity: .9; line-height: 1.25; }
+    .count   { display: inline-block; margin-top: 1.2vmin; background: rgba(0,0,0,.22);
+               padding: .7vmin 3vmin; border-radius: 99px;
                font-size: clamp(18px,3.4vmin,34px); font-weight: 600; }
-    .bar     { margin-top: 2.4vmin; height: clamp(10px,1.8vmin,18px); background: rgba(0,0,0,.3); border-radius: 99px; overflow: hidden; }
+    .bar     { margin-top: 1.6vmin; height: clamp(10px,1.8vmin,18px); background: rgba(0,0,0,.3); border-radius: 99px; overflow: hidden; }
     .fill    { height: 100%; width: 0; background: linear-gradient(90deg,var(--gold),#f59e0b); transition: width .5s; }
-    .barlbl  { display: flex; justify-content: space-between; font-size: clamp(13px,2vmin,20px); color: #e2e8f0; margin-top: 8px; }
+    .barlbl  { display: flex; justify-content: space-between; font-size: clamp(13px,2vmin,20px); color: #e2e8f0; margin-top: 4px; }
 
     /* ── SCHEDULE ── */
     .up    { flex: 1; display: flex; flex-direction: column; min-height: 0; }
     .up h2 { font-size: clamp(14px,2.2vmin,22px); letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
              margin: 0 0 1.4vmin; border-bottom: 1px solid var(--line); padding-bottom: 1.2vmin; font-weight: 600; }
     ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column;
-         gap: 1.4vmin; overflow-y: auto; }
+         gap: 1.4vmin; overflow: hidden; flex: 0 1 auto; min-height: 0; }
     li { background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--gold);
-         border-radius: clamp(14px,2.4vmin,24px); padding: 1.8vmin 2.6vmin;
+         border-radius: clamp(14px,2.4vmin,24px); padding: 1.4vmin 2.6vmin;
          display: flex; justify-content: space-between; gap: 12px; align-items: center; }
     li .tm { font-weight: 700; color: #fff; font-size: clamp(18px,3.2vmin,32px); font-variant-numeric: tabular-nums; }
     li .nm { color: var(--muted); font-size: clamp(15px,2.6vmin,26px); }
-    li.past { opacity: .45; border-left-color: #475569; }
+    li.past, li.nofit { display: none; }              /* finished / doesn't fit on screen */
+    li { flex-shrink: 0; }
+    .more  { text-align: center; color: var(--muted); font-size: clamp(14px,2.2vmin,22px); padding-top: 1.2vmin; }
     li.active-slot { border-left-color: #ef4444; background: rgba(185,28,28,.22); }
     .none  { color: var(--muted); font-style: italic; text-align: center; padding: 2vmin 0; font-size: clamp(15px,2.4vmin,24px); }
     .foot  { text-align: center; font-size: clamp(12px,1.7vmin,17px); color: rgba(143,176,221,.6);
@@ -281,6 +284,8 @@
     <ul id="list">
       <li class="none" style="border:0;background:none">Loading…</li>
     </ul>
+    <div class="none" id="doneMsg" hidden>No more meetings today</div>
+    <div class="more" id="moreMsg" hidden></div>
   </section>
 
   <div class="foot">
@@ -373,13 +378,34 @@ function paint() {
     $('barBox').hidden = true;
   }
 
-  [...$('list').children].forEach(li => {
+  // Finished meetings are hidden; only the current and upcoming ones are shown, in time order.
+  const items = [...$('list').children].filter(li => li.dataset.end);
+  items.forEach(li => {
     const end   = Number(li.dataset.end);
     const start = Number(li.dataset.start);
     li.classList.toggle('past',        end   <= t);
     li.classList.toggle('active-slot', start <= t && t < end);
   });
+  const remaining = items.filter(li => !li.classList.contains('past'));
+  $('doneMsg').hidden = !(items.length && !remaining.length);
+  fitList(remaining);
 }
+
+/* Keep the page from scrolling: show as many upcoming meetings as fit on
+   screen, and put "+N more later today" for the rest. */
+function fitList(remaining) {
+  const ul = $('list'), more = $('moreMsg');
+  remaining.forEach(li => li.classList.remove('nofit'));
+  more.hidden = true;
+  let hidden = 0;
+  for (let i = remaining.length - 1; i > 0 && ul.scrollHeight > ul.clientHeight + 1; i--) {
+    remaining[i].classList.add('nofit');
+    hidden++;
+    more.hidden = false;
+    more.textContent = '+ ' + hidden + ' more later today';
+  }
+}
+window.addEventListener('resize', () => { if (S) paint(); });
 
 /* ─────────────────────────────────────────────────────────────
    SERVER DATA → show()
