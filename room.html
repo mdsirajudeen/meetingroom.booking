@@ -591,7 +591,7 @@ function startMatrix() {
   var fs, cols, drops = [], spd = [];
 
   function rnd(n) { return chars[Math.floor(Math.random() * chars.length)]; }
-  function newSpeed() { return Math.random() * 0.3 + 0.18; }
+  function newSpeed() { return Math.random() * 0.18 + 0.10; }   // fall speed (rows per frame) — lower = slower
 
   function setup() {
     mc.width  = window.innerWidth;
