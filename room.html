@@ -99,19 +99,18 @@
 
     /* ── LOGO MODE ── */
     #ss-logo-mode { display:flex; flex-direction:column; align-items:center; position:relative; z-index:5; }
-    #ss-canvas { position:absolute; inset:0; width:100%; height:100%; opacity:.35; pointer-events:none; }
+    #ss-canvas { position:absolute; inset:0; width:100%; height:100%; opacity:.55; pointer-events:none; }
     #ss-vignette { position:absolute; inset:0; pointer-events:none;
-                   background:radial-gradient(ellipse 65% 65% at 50% 48%,rgba(11,26,61,0) 20%,rgba(11,26,61,.88) 100%); }
+                   background:radial-gradient(ellipse 60% 60% at 50% 48%,rgba(11,26,61,.2) 0%,rgba(11,26,61,.75) 100%); }
     .ss-logo-wrap { position:relative; width:130px; height:130px; display:flex; align-items:center; justify-content:center; }
-    #ss-led { position:absolute; top:0; left:0; width:130px; height:130px; }
     .ss-logo-sq { width:106px; height:106px; background:#fff; border-radius:12px;
                   display:flex; align-items:center; justify-content:center; overflow:hidden; }
     .ss-logo-sq img { width:90px; height:90px; object-fit:contain; display:block; }
-    .ss-name { color:#fff; font-size:19px; font-weight:500; letter-spacing:4px; margin-top:20px; text-align:center; text-shadow:0 0 30px rgba(100,160,255,.4); }
-    .ss-sub  { color:rgba(120,170,255,.45); font-size:9.5px; letter-spacing:3.5px; margin-top:5px; text-align:center; }
-    .ss-div  { width:180px; height:1px; background:linear-gradient(90deg,transparent,rgba(100,160,255,.35),transparent); margin:16px auto 0; }
+    .ss-name { color:#c8e0ff; font-size:19px; font-weight:500; letter-spacing:4px; margin-top:20px; text-align:center; text-shadow:0 0 30px rgba(100,160,255,.6); }
+    .ss-sub  { color:#c8e0ff; font-size:9.5px; letter-spacing:3.5px; margin-top:5px; text-align:center; opacity:.7; }
+    .ss-div  { width:180px; height:1px; background:linear-gradient(90deg,transparent,rgba(200,224,255,.5),transparent); margin:16px auto 0; }
     .ss-clk  { color:#c8e0ff; font-size:40px; font-weight:200; letter-spacing:6px; font-family:monospace; margin-top:16px; text-align:center; text-shadow:0 0 20px rgba(100,160,255,.4); }
-    .ss-dt   { color:rgba(100,160,255,.4); font-size:10px; letter-spacing:3px; font-family:monospace; margin-top:6px; text-align:center; }
+    .ss-dt   { color:#c8e0ff; font-size:16px; font-weight:200; letter-spacing:4px; font-family:monospace; margin-top:8px; text-align:center; text-shadow:0 0 20px rgba(100,160,255,.4); }
 
     /* ── ALERT MODE — upcoming meeting card ── */
     #ss-alert-mode {
@@ -188,7 +187,6 @@
   <!-- MODE 1: Default logo animation -->
   <div id="ss-logo-mode">
     <div class="ss-logo-wrap">
-      <canvas id="ss-led" width="130" height="130"></canvas>
       <div class="ss-logo-sq">
         <img src="logo.png" alt="Kuwait Hospital">
       </div>
@@ -296,9 +294,10 @@ if (!ROOM) {
   document.querySelector('.wrap').innerHTML =
     '<div class="setup"><h2>Room Display Setup</h2>' +
     '<p style="color:#94a3b8;margin-bottom:2vh">Add <code style="color:var(--gold)">?room=RoomName</code> to the URL.</p>' +
-    '<div class="url-box"><div class="lbl">Board Room (Floor 3)</div><div class="url">'  + base + '?room=Board%20Room</div></div>' +
-    '<div class="url-box"><div class="lbl">Hall 1008 (Floor 10)</div><div class="url">' + base + '?room=Hall%201008</div></div>' +
-    '<div class="url-box"><div class="lbl">Small Meeting Room (Floor 1)</div><div class="url">' + base + '?room=Small%20Meeting%20Room</div></div>' +
+    '<div class="url-box"><div class="lbl">Executive Room (Floor 10 · 10 people)</div><div class="url">'       + base + '?room=Executive%20Room</div></div>' +
+    '<div class="url-box"><div class="lbl">Hall 1008 (Floor 10 · 40 people)</div><div class="url">'           + base + '?room=Hall%201008</div></div>' +
+    '<div class="url-box"><div class="lbl">Basement Meeting Room (Basement · 15 people)</div><div class="url">'+ base + '?room=Basement%20Meeting%20Room</div></div>' +
+    '<div class="url-box"><div class="lbl">Hall 1015 (Floor 10 · 15 people)</div><div class="url">'           + base + '?room=Hall%201015</div></div>' +
     '</div>';
 }
 
@@ -467,7 +466,6 @@ function enterScreensaver() {
     ssActive = true;
     $('screensaver').classList.add('active');
     startMatrix();
-    startLED();
   }
   // Decide mode: alert or logo
   updateScreensaverMode();
@@ -576,7 +574,7 @@ function startMatrix() {
   }
   function drawM() {
     if (!ssActive) { mRunning = false; return; }
-    mctx.fillStyle = 'rgba(11,26,61,0.15)';
+    mctx.fillStyle = 'rgba(11,26,61,0.12)';
     mctx.fillRect(0, 0, mc.width, mc.height);
     for (var i = 0; i < cols; i++) {
       var y = Math.floor(drops[i]) * fs;
@@ -584,78 +582,20 @@ function startMatrix() {
       if (y < -fs || y > mc.height + fs) { drops[i] += spd[i]; continue; }
       var ch = chars[Math.floor(Math.random() * chars.length)];
       mctx.font = fs + 'px monospace';
-      mctx.fillStyle = 'rgba(210,230,255,.95)'; mctx.fillText(ch, x, y);
-      if (drops[i] > 1) { mctx.fillStyle = 'rgba(80,140,255,.55)'; mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y-fs); }
-      if (drops[i] > 2) { mctx.fillStyle = 'rgba(40,90,200,.28)';  mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y-fs*2); }
-      if (drops[i] > 3) { mctx.fillStyle = 'rgba(20,60,150,.12)';  mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y-fs*3); }
+      mctx.fillStyle = 'rgba(220,238,255,.98)'; mctx.fillText(ch, x, y);
+      if (drops[i] > 1) { mctx.fillStyle = 'rgba(100,160,255,.72)'; mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y-fs); }
+      if (drops[i] > 2) { mctx.fillStyle = 'rgba(60,110,220,.48)';  mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y-fs*2); }
+      if (drops[i] > 3) { mctx.fillStyle = 'rgba(30,70,180,.28)';   mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y-fs*3); }
+      if (drops[i] > 4) { mctx.fillStyle = 'rgba(15,40,140,.14)';   mctx.fillText(chars[Math.floor(Math.random()*chars.length)], x, y-fs*4); }
       drops[i] += spd[i];
-      if (y > mc.height && Math.random() > .978) drops[i] = Math.random() * -40;
+      if (y > mc.height && Math.random() > .975) drops[i] = Math.random() * -40;
     }
     requestAnimationFrame(drawM);
   }
   drawM();
 }
 
-/* ─────────────────────────────────────────────────────────────
-   LED BORDER ANIMATION
-───────────────────────────────────────────────────────────── */
-var ledRunning = false, ledPath, ledOffset = 0;
-function startLED() {
-  if (ledRunning) return;
-  ledRunning = true;
-  var lc   = $('ss-led');
-  var lctx = lc.getContext('2d');
-  var W = 130, H = 130, PAD = 12, R = 12;
-  var x0 = PAD, y0 = PAD, x1 = W-PAD, y1 = H-PAD;
-  ledPath = [];
-  var step = 2;
-  for (var x = x0+R; x <= x1-R; x += step) ledPath.push({x:x,y:y0});
-  for (var a = 270; a <= 360; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x1-R+R*Math.cos(r),y:y0+R+R*Math.sin(r)}); }
-  for (var y = y0+R; y <= y1-R; y += step) ledPath.push({x:x1,y:y});
-  for (var a = 0; a <= 90; a += 4)   { var r=a*Math.PI/180; ledPath.push({x:x1-R+R*Math.cos(r),y:y1-R+R*Math.sin(r)}); }
-  for (var x = x1-R; x >= x0+R; x -= step) ledPath.push({x:x,y:y1});
-  for (var a = 90; a <= 180; a += 4) { var r=a*Math.PI/180; ledPath.push({x:x0+R+R*Math.cos(r),y:y1-R+R*Math.sin(r)}); }
-  for (var y = y1-R; y >= y0+R; y -= step) ledPath.push({x:x0,y:y});
-  for (var a = 180; a <= 270; a += 4){ var r=a*Math.PI/180; ledPath.push({x:x0+R+R*Math.cos(r),y:y0+R+R*Math.sin(r)}); }
-
-  var total = ledPath.length;
-  var TAIL  = Math.floor(total * 0.18);
-
-  function drawLED() {
-    if (!ssActive) { ledRunning = false; return; }
-    lctx.clearRect(0, 0, W, H);
-    for (var i = 0; i < total; i++) {
-      var p = ledPath[i];
-      lctx.beginPath(); lctx.arc(p.x, p.y, 1.2, 0, Math.PI*2);
-      lctx.fillStyle = 'rgba(100,150,255,0.08)'; lctx.fill();
-    }
-    var heads = [ledOffset, (ledOffset + Math.floor(total/2)) % total];
-    for (var h = 0; h < heads.length; h++) {
-      var head = heads[h];
-      for (var t = 0; t < TAIL; t++) {
-        var idx  = (head - t + total) % total;
-        var p    = ledPath[idx];
-        var frac = 1 - (t / TAIL);
-        var sz, r2, g2, b2, a2;
-        if (t === 0) { r2=255;g2=220;b2=80;a2=1;sz=3.5; }
-        else if (frac > 0.7) { var f=(frac-0.7)/0.3; r2=Math.floor(255-f*50);g2=Math.floor(220+f*35);b2=Math.floor(80+f*175);a2=frac;sz=2.5; }
-        else { r2=Math.floor(80+frac*80);g2=Math.floor(140+frac*80);b2=255;a2=frac*0.9;sz=t<3?2:1.8; }
-        if (t < 8) {
-          lctx.beginPath(); lctx.arc(p.x,p.y,sz*2.5,0,Math.PI*2);
-          var grd=lctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz*2.5);
-          grd.addColorStop(0,'rgba('+r2+','+g2+','+b2+','+(a2*0.4)+')');
-          grd.addColorStop(1,'rgba('+r2+','+g2+','+b2+',0)');
-          lctx.fillStyle=grd; lctx.fill();
-        }
-        lctx.beginPath(); lctx.arc(p.x,p.y,sz,0,Math.PI*2);
-        lctx.fillStyle='rgba('+r2+','+g2+','+b2+','+a2+')'; lctx.fill();
-      }
-    }
-    ledOffset = (ledOffset + 1) % total;
-    setTimeout(drawLED, 18);
-  }
-  drawLED();
-}
+/* LED border removed — matrix rain runs full screen */
 
 /* ─────────────────────────────────────────────────────────────
    BOOT
