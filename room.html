@@ -107,7 +107,18 @@
                     display:flex; align-items:center; justify-content:center; }
     .ss-logo-sq { width:92%; height:92%; background:#fff; border-radius:clamp(18px,3vmin,32px);
                   display:flex; align-items:center; justify-content:center; overflow:hidden;
-                  box-shadow:0 0 40px rgba(100,160,255,.35); }
+                  box-shadow:0 0 40px rgba(100,160,255,.35);
+                  animation:ss-float 4s ease-in-out infinite; will-change:transform; }
+    /* Floating logo: gentle up/down hover with a soft glow shadow underneath */
+    .ss-logo-wrap::after { content:''; position:absolute; left:50%; bottom:calc(-1 * clamp(10px,2.2vmin,24px));
+                  width:60%; height:clamp(8px,1.6vmin,16px); margin-left:-30%; border-radius:50%;
+                  background:rgba(100,160,255,.6); filter:blur(clamp(4px,1vmin,10px));
+                  animation:ss-float-shadow 4s ease-in-out infinite; }
+    @keyframes ss-float { 0%,100% { transform:translateY(calc(-1 * clamp(6px,1.5vmin,16px))); }
+                          50%     { transform:translateY(clamp(6px,1.5vmin,16px)); } }
+    @keyframes ss-float-shadow { 0%,100% { transform:scaleX(.75); opacity:.3; }
+                                 50%     { transform:scaleX(1);   opacity:.6; } }
+    @media (prefers-reduced-motion: reduce) { .ss-logo-sq, .ss-logo-wrap::after { animation:none; } }
     .ss-logo-sq img { width:88%; height:88%; object-fit:contain; display:block; }
     .ss-name { color:#c8e0ff; font-size:clamp(40px,min(10.5vmin,6.8vw),130px); font-weight:600; letter-spacing:.1em; line-height:1.1;
                margin-top:clamp(20px,4vmin,44px); text-align:center; text-shadow:0 0 30px rgba(100,160,255,.6); }
@@ -599,6 +610,29 @@ function startMatrix() {
   }
   setup();
 
+  /* Rain cycle: falls for 40 s, then stops spawning. Once the last drops have
+     fallen off the screen, the screen stays empty for 5–6 s, then the rain
+     starts again from the top. */
+  var RAIN_MS = 40000;
+  var raining = true, waitingEmpty = false;
+  function startRain() {
+    raining = true; waitingEmpty = false;
+    var rows = mc.height / fs;
+    for (var i = 0; i < cols; i++) {
+      drops[i] = -Math.random() * rows * 0.6;   // staggered start above the top
+      spd[i]   = newSpeed();
+    }
+    setTimeout(function () { raining = false; waitingEmpty = true; }, RAIN_MS);
+  }
+  setTimeout(function () { raining = false; waitingEmpty = true; }, RAIN_MS);
+  function checkEmpty() {           // called every frame during the stop phase
+    if (!waitingEmpty) return;
+    var rows = mc.height / fs;
+    for (var i = 0; i < cols; i++) if (drops[i] - trail.length <= rows) return;
+    waitingEmpty = false;
+    setTimeout(startRain, 5000 + Math.random() * 1000);   // 5–6 s empty break
+  }
+
   var rT;
   window.addEventListener('resize', function () { clearTimeout(rT); rT = setTimeout(setup, 200); });
 
@@ -618,11 +652,17 @@ function startMatrix() {
       }
       drops[i] += spd[i];
       // once the trail has left the screen, start again just above the top
+      // (only while raining — during the break the column stays empty)
       if (drops[i] - trail.length > rows) {
-        drops[i] = -Math.random() * 15;
-        spd[i]   = newSpeed();
+        if (raining) {
+          drops[i] = -Math.random() * 15;
+          spd[i]   = newSpeed();
+        } else {
+          drops[i] = rows + 999;   // park off-screen until the rain restarts
+        }
       }
     }
+    checkEmpty();
     requestAnimationFrame(drawM); /* always continues — never stops */
   }
   drawM();
