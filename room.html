@@ -610,10 +610,10 @@ function startMatrix() {
   }
   setup();
 
-  /* Rain cycle: falls for 40 s, then stops spawning. Once the last drops have
-     fallen off the screen, the screen stays empty for 5–6 s, then the rain
+  /* Rain cycle: falls for 10 s, then stops spawning. Once the last drops have
+     fallen off the screen, the screen stays empty for 3 s, then the rain
      starts again from the top. */
-  var RAIN_MS = 40000;
+  var RAIN_MS = 10000;   // rain falls for 10 s
   var raining = true, waitingEmpty = false;
   function startRain() {
     raining = true; waitingEmpty = false;
@@ -630,7 +630,7 @@ function startMatrix() {
     var rows = mc.height / fs;
     for (var i = 0; i < cols; i++) if (drops[i] - trail.length <= rows) return;
     waitingEmpty = false;
-    setTimeout(startRain, 5000 + Math.random() * 1000);   // 5–6 s empty break
+    setTimeout(startRain, 3000);   // 3 s empty break
   }
 
   var rT;
