@@ -4,87 +4,73 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Room Display – Kuwait Hospital</title>
-  <!-- Same fonts on every tablet (Windows, Android, iPad) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&family=Roboto+Mono:wght@200;300;400&display=swap" rel="stylesheet">
   <style>
-    /* Same blue theme as the screensaver. Sizes use vmin so every 10–11" tablet looks identical. */
-    :root { --bg:#0b1a3d; --ink:#c8e0ff; --muted:#8fb0dd; --line:rgba(100,160,255,.18);
-            --card:rgba(30,60,130,.28); --gold:#c9a961; --busy:#b91c1c; --free:#166634; }
+    :root { --navy:#1e2d5c; --gold:#c9a961; --busy:#b91c1c; --free:#166634; }
     * { box-sizing: border-box; }
-    html, body { height: 100%; overflow: hidden; }   /* the tablet page never scrolls */
-    body { margin: 0; color: #fff; background: var(--bg);
-           background-image: radial-gradient(ellipse 80% 70% at 50% 35%, #142a5c 0%, var(--bg) 70%);
-           background-attachment: fixed;
-           font-family: "Open Sans", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
-    .wrap { height: 100vh; height: 100dvh; display: flex; flex-direction: column; padding: 2.4vmin 3vmin; gap: 2.2vmin; }
+    html, body { height: 100%; }
+    body { margin: 0; background: #0b0f17; color: #fff;
+           font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+    .wrap { min-height: 100%; display: flex; flex-direction: column; padding: 2.2vh 3vw; gap: 2vh; }
 
     /* ── TOP BAR ── */
-    .top { display: flex; align-items: center; justify-content: space-between; gap: 2vmin;
-           border-bottom: 1px solid var(--line); padding-bottom: 2vmin; }
-    .brand { display: flex; align-items: center; gap: 2.4vmin; min-width: 0; }
-    .logo  { height: clamp(70px,14vmin,150px); aspect-ratio: 1; background: #fff; flex-shrink: 0;
-             border-radius: clamp(12px,2vmin,22px); padding: 1vmin; display: flex; align-items: center; justify-content: center;
-             box-shadow: 0 0 24px rgba(100,160,255,.35); }
-    .logo img { width: 100%; height: 100%; object-fit: contain; }
-    .room  { font-size: clamp(26px,6vmin,64px); font-weight: 700; white-space: nowrap; color: #fff;
-             overflow: hidden; text-overflow: ellipsis; line-height: 1.15; }
-    .sub   { color: var(--muted); font-size: clamp(14px,2.6vmin,26px); margin-top: .4vmin; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+           border-bottom: 1px solid #1e2a3a; padding-bottom: 1.6vh; }
+    .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .logo  { height: 7vh; min-height: 44px; aspect-ratio: 1.5; background: #fff;
+             border-radius: 10px; padding: 4px; display: flex; align-items: center; justify-content: center; }
+    .logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .room  { font-size: clamp(22px,4vh,40px); font-weight: 700; white-space: nowrap;
+             overflow: hidden; text-overflow: ellipsis; }
+    .sub   { color: #94a3b8; font-size: clamp(12px,1.8vh,17px); }
     .clock { text-align: right; }
-    .clock .t { font-size: clamp(30px,7.5vmin,80px); font-weight: 700; font-variant-numeric: tabular-nums;
-                color: var(--ink); line-height: 1; text-shadow: 0 0 24px rgba(100,160,255,.45); }
-    .live  { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); margin-top: 1vmin;
-             font-size: clamp(12px,1.8vmin,18px); letter-spacing: 1.5px; text-transform: uppercase; }
-    .live::before { content: ""; width: 1.2vmin; height: 1.2vmin; min-width: 8px; min-height: 8px; border-radius: 50%;
+    .clock .t { font-size: clamp(24px,5vh,52px); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .live  { display: inline-flex; align-items: center; gap: 8px; color: #94a3b8;
+             font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
+    .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%;
                     background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: p 2s infinite; }
     .live.off::before { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
     @keyframes p { 50% { opacity:.35; } }
 
     /* ── STATUS BANNER ── */
-    .top, .status, .foot { flex-shrink: 0; }
-    .status { border-radius: clamp(20px,3.5vmin,40px); padding: 2vmin 3vmin 1.8vmin; text-align: center;
-              transition: background .4s; border: 1px solid rgba(255,255,255,.12);
-              box-shadow: 0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); }
-    .status.busy { background: linear-gradient(180deg,#c42222 0%,#991515 100%); }
-    .status.free { background: linear-gradient(180deg,#1a7a3e 0%,#13592d 100%); }
-    .label   { font-size: clamp(40px,9.5vmin,104px); font-weight: 800;
-               text-transform: uppercase; line-height: 1; letter-spacing: .04em; }
-    .mtitle  { font-size: clamp(20px,4vmin,44px); font-weight: 600; margin-top: .4vmin; line-height: 1.2; word-break: break-word; }
-    .host    { font-size: clamp(15px,2.8vmin,28px); opacity: .9; line-height: 1.25; }
-    .count   { display: inline-block; margin-top: 1.2vmin; background: rgba(0,0,0,.22);
-               padding: .7vmin 3vmin; border-radius: 99px;
-               font-size: clamp(18px,3.4vmin,34px); font-weight: 600; }
-    .bar     { margin-top: 1.6vmin; height: clamp(10px,1.8vmin,18px); background: rgba(0,0,0,.3); border-radius: 99px; overflow: hidden; }
+    .status { border-radius: 28px; padding: 4vh 3vw; text-align: center;
+              transition: background .4s; box-shadow: inset 0 2px 10px rgba(0,0,0,.35); }
+    .status.busy { background: var(--busy); }
+    .status.free { background: var(--free); }
+    .label   { font-size: clamp(40px,11vh,120px); font-weight: 800;
+               text-transform: uppercase; line-height: 1.05; letter-spacing: 2px; }
+    .mtitle  { font-size: clamp(20px,4vh,40px); font-weight: 600; margin-top: 1vh; word-break: break-word; }
+    .host    { font-size: clamp(15px,2.6vh,26px); opacity: .9; }
+    .count   { display: inline-block; margin-top: 1.6vh; background: rgba(0,0,0,.22);
+               padding: .8vh 2vw; border-radius: 99px;
+               font-size: clamp(16px,2.8vh,28px); font-weight: 600; }
+    .bar     { margin-top: 2vh; height: 14px; background: rgba(0,0,0,.3); border-radius: 99px; overflow: hidden; }
     .fill    { height: 100%; width: 0; background: linear-gradient(90deg,var(--gold),#f59e0b); transition: width .5s; }
-    .barlbl  { display: flex; justify-content: space-between; font-size: clamp(13px,2vmin,20px); color: #e2e8f0; margin-top: 4px; }
+    .barlbl  { display: flex; justify-content: space-between; font-size: 13px; color: #e2e8f0; margin-top: 6px; }
 
     /* ── SCHEDULE ── */
     .up    { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-    .up h2 { font-size: clamp(14px,2.2vmin,22px); letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
-             margin: 0 0 1.4vmin; border-bottom: 1px solid var(--line); padding-bottom: 1.2vmin; font-weight: 600; }
+    .up h2 { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: #94a3b8;
+             margin: 0 0 1vh; border-bottom: 1px solid #2d3748; padding-bottom: 8px; }
     ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column;
-         gap: 1.4vmin; overflow: hidden; flex: 0 1 auto; min-height: 0; }
-    li { background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--gold);
-         border-radius: clamp(14px,2.4vmin,24px); padding: 1.4vmin 2.6vmin;
-         display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-    li .tm { font-weight: 700; color: #fff; font-size: clamp(18px,3.2vmin,32px); font-variant-numeric: tabular-nums; }
-    li .nm { color: var(--muted); font-size: clamp(15px,2.6vmin,26px); }
-    li.past, li.nofit { display: none; }              /* finished / doesn't fit on screen */
-    li { flex-shrink: 0; }
-    .more  { text-align: center; color: var(--muted); font-size: clamp(14px,2.2vmin,22px); padding-top: 1.2vmin; }
-    li.active-slot { border-left-color: #ef4444; background: rgba(185,28,28,.22); }
-    .none  { color: var(--muted); font-style: italic; text-align: center; padding: 2vmin 0; font-size: clamp(15px,2.4vmin,24px); }
-    .foot  { text-align: center; font-size: clamp(12px,1.7vmin,17px); color: rgba(143,176,221,.6);
-             border-top: 1px solid var(--line); padding-top: 1.2vmin; }
+         gap: 1vh; overflow-y: auto; }
+    li { background: #1a2332; border-radius: 18px; padding: 1.4vh 18px;
+         border-left: 5px solid var(--gold); display: flex; justify-content: space-between;
+         gap: 12px; align-items: center; }
+    li .tm { font-weight: 700; color: #e2e8f0; font-size: clamp(15px,2.2vh,22px); font-variant-numeric: tabular-nums; }
+    li .nm { color: #94a3b8; font-size: clamp(13px,1.9vh,19px); }
+    li.past { opacity: .45; border-left-color: #475569; }
+    li.active-slot { border-left-color: #ef4444; background: #1f1515; }
+    .none  { color: #64748b; font-style: italic; text-align: center; padding: 2vh 0; }
+    .foot  { text-align: center; font-size: 12px; color: #475569;
+             border-top: 1px solid #1e293b; padding-top: 1vh; }
 
     /* ── SETUP SCREEN ── */
     .setup { margin: auto; text-align: center; padding: 4vh; }
     .setup h2 { color: var(--gold); font-size: clamp(20px,4vh,36px); margin-bottom: 2vh; }
-    .url-box { background: var(--card); border-radius: 14px; padding: 2vh 3vw; margin: 1.5vh 0;
+    .url-box { background: #1a2332; border-radius: 14px; padding: 2vh 3vw; margin: 1.5vh 0;
                border-left: 4px solid var(--gold); text-align: left; }
     .url-box .lbl { font-size: 12px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
-    .url-box .url { font-size: clamp(12px,1.8vh,16px); color: #e2e8f0; word-break: break-all; font-family: "Roboto Mono", monospace; }
+    .url-box .url { font-size: clamp(12px,1.8vh,16px); color: #e2e8f0; word-break: break-all; font-family: monospace; }
 
     /* ════════════════════════════════════════════════════════════
        SCREENSAVER — two modes:
@@ -97,7 +83,7 @@
       background: #0b1a3d;
       align-items: center; justify-content: center;
       cursor: pointer;
-      font-family: "Open Sans", "Segoe UI", system-ui, sans-serif;
+      font-family: "Segoe UI", system-ui, sans-serif;
     }
     #screensaver.active { display: flex; }
 
@@ -140,10 +126,10 @@
                text-align:center; opacity:.75; }
     .ss-div  { width:clamp(260px,50vmin,560px); height:1px; background:linear-gradient(90deg,transparent,rgba(200,224,255,.5),transparent);
                margin:clamp(16px,3vmin,32px) auto 0; }
-    .ss-clk  { color:#c8e0ff; font-size:clamp(36px,7vmin,84px); font-weight:200; letter-spacing:.1em; font-family:"Roboto Mono", monospace;
+    .ss-clk  { color:#c8e0ff; font-size:clamp(36px,7vmin,84px); font-weight:200; letter-spacing:.1em; font-family:monospace;
                font-variant-numeric:tabular-nums; margin-top:clamp(14px,2.5vmin,28px); text-align:center; line-height:1;
                text-shadow:0 0 30px rgba(100,160,255,.5); }
-    .ss-dt   { color:#c8e0ff; font-size:clamp(16px,3vmin,32px); font-weight:300; letter-spacing:.2em; font-family:"Roboto Mono", monospace;
+    .ss-dt   { color:#c8e0ff; font-size:clamp(16px,3vmin,32px); font-weight:300; letter-spacing:.2em; font-family:monospace;
                margin-top:clamp(8px,1.6vmin,18px); text-align:center; text-shadow:0 0 20px rgba(100,160,255,.4); }
 
     /* ── ALERT MODE — upcoming meeting card ── */
@@ -186,7 +172,7 @@
     }
     .alert-in    { color: rgba(100,160,255,.7); font-size: 13px; letter-spacing: 2px; margin-bottom: 10px; }
     .alert-timer { color: #c9a961; font-size: clamp(48px,10vh,90px); font-weight: 200;
-                   font-family: "Roboto Mono", monospace; letter-spacing: 4px; line-height: 1;
+                   font-family: monospace; letter-spacing: 4px; line-height: 1;
                    text-shadow: 0 0 30px rgba(201,169,97,.5); }
     .alert-label { color: rgba(255,255,255,.5); font-size: 14px; letter-spacing: 1.5px; margin-top: 6px; margin-bottom: 28px; }
     .alert-divider { width: 60px; height: 1px; background: rgba(100,160,255,.2); margin: 0 auto 28px; }
@@ -200,7 +186,7 @@
     .alert-prog-fill { height: 100%; background: linear-gradient(90deg,#c9a961,#f59e0b);
                        border-radius: 99px; transition: width 1s linear; }
     .alert-ss-clk { color: rgba(200,224,255,.5); font-size: 22px; font-weight: 200;
-                    font-family: "Roboto Mono", monospace; letter-spacing: 4px; margin-top: 32px; }
+                    font-family: monospace; letter-spacing: 4px; margin-top: 32px; }
   </style>
 </head>
 <body>
@@ -284,8 +270,6 @@
     <ul id="list">
       <li class="none" style="border:0;background:none">Loading…</li>
     </ul>
-    <div class="none" id="doneMsg" hidden>No more meetings today</div>
-    <div class="more" id="moreMsg" hidden></div>
   </section>
 
   <div class="foot">
@@ -378,34 +362,13 @@ function paint() {
     $('barBox').hidden = true;
   }
 
-  // Finished meetings are hidden; only the current and upcoming ones are shown, in time order.
-  const items = [...$('list').children].filter(li => li.dataset.end);
-  items.forEach(li => {
+  [...$('list').children].forEach(li => {
     const end   = Number(li.dataset.end);
     const start = Number(li.dataset.start);
     li.classList.toggle('past',        end   <= t);
     li.classList.toggle('active-slot', start <= t && t < end);
   });
-  const remaining = items.filter(li => !li.classList.contains('past'));
-  $('doneMsg').hidden = !(items.length && !remaining.length);
-  fitList(remaining);
 }
-
-/* Keep the page from scrolling: show as many upcoming meetings as fit on
-   screen, and put "+N more later today" for the rest. */
-function fitList(remaining) {
-  const ul = $('list'), more = $('moreMsg');
-  remaining.forEach(li => li.classList.remove('nofit'));
-  more.hidden = true;
-  let hidden = 0;
-  for (let i = remaining.length - 1; i > 0 && ul.scrollHeight > ul.clientHeight + 1; i--) {
-    remaining[i].classList.add('nofit');
-    hidden++;
-    more.hidden = false;
-    more.textContent = '+ ' + hidden + ' more later today';
-  }
-}
-window.addEventListener('resize', () => { if (S) paint(); });
 
 /* ─────────────────────────────────────────────────────────────
    SERVER DATA → show()
@@ -457,58 +420,62 @@ function load() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   SCREENSAVER LOGIC
+   SCREENSAVER LOGIC — New Rules
    ─────────────────────────────────────────────────────────────
 
-   ACTIVATE if ANY of:
-     1. Friday (all day)               — Kuwait day = 5 (Fri)
-     2. Workday (Sat–Thu) after 18:00
-     3. Workday + zero meetings today
+   SCREENSAVER ON (logo + matrix):
+     1. No meetings at all today (Sat–Thu)
+     2. Friday — all day
+     3. After 18:00 on Sat–Thu
+     4. Last meeting ended + 30 min passed + no more meetings today
 
-   OVERRIDE (even if active):
-     • A meeting starts within 90 min  → switch to ALERT mode
-       (show meeting card instead of logo animation)
+   SCREENSAVER OFF (normal tablet view):
+     • Meeting happening RIGHT NOW
+     • Meeting starts within 60 min → show ALERT card on screensaver
+     • User tapped screen → show normal view, suppress 10 min
 
-   SUPPRESS:
-     • A meeting is happening RIGHT NOW → screensaver stays OFF
-     • User tapped to dismiss           → suppress for 10 min
+   ALERT MODE (on screensaver — 60 min before meeting):
+     • Screensaver stays ON but switches to meeting card
+     • Shows countdown + meeting details
+     • Tap → exits to normal view for 10 min
 ───────────────────────────────────────────────────────────── */
 
 function shouldActivateScreensaver() {
   if (!S) return false;
 
-  const t  = nowMs();
-  const kn = kuwaitNow();
-  const day  = kn.getDay();   // 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
-  const hour = kn.getHours();
+  var t = nowMs();
 
-  // Never show if a meeting is happening right now
-  const hasMeetingNow = S.meetings.some(m => t >= m.startMs && t < m.endMs);
-  if (hasMeetingNow) return false;
-
-  // Manual exit suppression (10 min)
+  // Manual exit suppression
   if (t < manualExitUntil) return false;
 
-  // Rule 1 — Friday all day
-  if (day === 5) return true;
+  // Meeting happening RIGHT NOW → screensaver OFF
+  var hasMeetingNow = S.meetings.some(function(m){ return t >= m.startMs && t < m.endMs; });
+  if (hasMeetingNow) return false;
 
-  // Rule 2 — Workday after 18:00  (Sat=6, Sun=0, Mon=1, Tue=2, Wed=3, Thu=4)
-  const isWorkday = (day !== 5);   // every day except Friday
-  if (isWorkday && hour >= 18) return true;
+  // Meeting starts within 60 min → screensaver OFF (show normal tablet)
+  var min60 = 60 * 60 * 1000;
+  var upcomingSoon = S.meetings.some(function(m){ return m.startMs > t && (m.startMs - t) <= min60; });
+  if (upcomingSoon) return false;
 
-  // Rule 3 — Workday with zero meetings today
-  if (isWorkday && S.meetings.length === 0) return true;
+  // No meetings at all today → screensaver ON
+  if (S.meetings.length === 0) return true;
 
-  return false;
+  // All meetings finished → check if 30 min passed since last meeting
+  var futureMeetings = S.meetings.filter(function(m){ return m.endMs > t; });
+  if (futureMeetings.length === 0) {
+    var lastEnd = Math.max.apply(null, S.meetings.map(function(m){ return m.endMs; }));
+    var min30 = 30 * 60 * 1000;
+    if (t >= lastEnd + min30) return true;
+    return false;
+  }
+
+  // Has future meetings but next one is more than 60 min away → screensaver ON
+  return true;
 }
 
-/* Returns the NEXT upcoming meeting within 90 min, or null */
-function getUpcomingAlert() {
-  if (!S) return null;
-  const t   = nowMs();
-  const min90 = 90 * 60 * 1000;
-  return S.meetings.find(m => m.startMs > t && (m.startMs - t) <= min90) || null;
-}
+/* Next meeting starting within 60 min */
+/* Screensaver turns OFF automatically 1hr before meeting — no alert card needed */
+function getUpcomingAlert() { return null; }
 
 function evaluateScreensaver() {
   if (shouldActivateScreensaver()) {
@@ -559,9 +526,9 @@ function renderAlert(meeting) {
   $('alert-time').textContent  = meeting.start + ' – ' + meeting.end;
   $('alert-room').textContent  = ROOM;
 
-  // Progress bar: 100% at 90 min before, 0% at start
-  const total90 = 90 * 60 * 1000;
-  const prog    = Math.max(0, Math.min(100, ((total90 - msLeft) / total90) * 100));
+  // Progress bar: 100% at 60 min before, 0% at start
+  const total60 = 60 * 60 * 1000;
+  const prog    = Math.max(0, Math.min(100, ((total60 - msLeft) / total60) * 100));
   $('alert-prog').style.width = prog + '%';
 }
 
@@ -574,8 +541,10 @@ function exitScreensaver() {
 }
 
 function exitScreensaverManual() {
-  manualExitUntil = nowMs() + 10 * 60 * 1000;  // suppress 10 min
+  manualExitUntil = nowMs() + 10 * 60 * 1000;  // suppress screensaver for 10 min
   exitScreensaver();
+  // Re-evaluate after 10 min
+  setTimeout(evaluateScreensaver, 10 * 60 * 1000 + 1000);
 }
 $('screensaver').addEventListener('click', exitScreensaverManual);
 
@@ -647,28 +616,8 @@ function startMatrix() {
   }
   setup();
 
-  /* Rain cycle: falls for 10 s, then stops spawning. Once the last drops have
-     fallen off the screen, the screen stays empty for 3 s, then the rain
-     starts again from the top. */
-  var RAIN_MS = 10000;   // rain falls for 10 s
-  var raining = true, waitingEmpty = false;
-  function startRain() {
-    raining = true; waitingEmpty = false;
-    var rows = mc.height / fs;
-    for (var i = 0; i < cols; i++) {
-      drops[i] = -Math.random() * rows * 0.6;   // staggered start above the top
-      spd[i]   = newSpeed();
-    }
-    setTimeout(function () { raining = false; waitingEmpty = true; }, RAIN_MS);
-  }
-  setTimeout(function () { raining = false; waitingEmpty = true; }, RAIN_MS);
-  function checkEmpty() {           // called every frame during the stop phase
-    if (!waitingEmpty) return;
-    var rows = mc.height / fs;
-    for (var i = 0; i < cols; i++) if (drops[i] - trail.length <= rows) return;
-    waitingEmpty = false;
-    setTimeout(startRain, 3000);   // 3 s empty break
-  }
+  /* Rain is continuous — never stops, never pauses */
+  function checkEmpty() {}   // no-op kept for compatibility
 
   var rT;
   window.addEventListener('resize', function () { clearTimeout(rT); rT = setTimeout(setup, 200); });
@@ -689,14 +638,10 @@ function startMatrix() {
       }
       drops[i] += spd[i];
       // once the trail has left the screen, start again just above the top
-      // (only while raining — during the break the column stays empty)
+      // always respawn — rain never stops
       if (drops[i] - trail.length > rows) {
-        if (raining) {
-          drops[i] = -Math.random() * 15;
-          spd[i]   = newSpeed();
-        } else {
-          drops[i] = rows + 999;   // park off-screen until the rain restarts
-        }
+        drops[i] = -Math.random() * 15;
+        spd[i]   = newSpeed();
       }
     }
     checkEmpty();
