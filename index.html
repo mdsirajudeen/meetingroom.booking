@@ -1,576 +1,685 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Book a Meeting Room – Kuwait Hospital</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
-  <style>
-    :root {
-      --blue:#0D2D6B; --blue-mid:#1A3A7A; --blue-soft:#dce8f7;
-      --ink:#16233b; --sub:#44506a; --muted:#6b7896; --line:#c8d8ee;
-      --bg:#e8eef7; --card:#ffffff; --field:#EBF2FB;
-      --ok:#127a3e; --err:#b42318;
+// ================================================================
+// Kuwait Hospital – Meeting Room Booking  |  Google Apps Script
+// Version 1.9 — Updated rooms & coordinator email
+// ================================================================
+
+var SHEET_ID    = '1_y2pb0m5aktSfk1k0IVZiA3ZUop9N9gNKx4qgEx5kEI';
+var ADMIN_EMAIL = 'ldabboussy@kuwaithospital.com.kw';   // coordinator — receives approve/reject
+var ADMIN_CC    = 'msirajudeen@kuwaithospital.com.kw';  // IT — gets a CC copy
+var SENDER_NAME = 'Kuwait Hospital – Room Booking';
+
+var ROOMS = [
+  { name: 'Executive Hall',        location: 'Floor 10',       approval: true },
+  { name: 'Basement Meeting Hall', location: 'Basement Floor', approval: true },
+  { name: 'Meeting Hall 1015',     location: 'Floor 10',       approval: true },
+  { name: 'KHC Meeting Hall',      location: 'Floor 1',        approval: true },
+];
+
+var HOURS = {
+  start: '08:00', end: '17:00', step: 30, maxHours: 8,
+  days: [0,1,2,3,4], ahead: 60, domain: 'kuwaithospital.com.kw'
+};
+
+// ================================================================
+// doPost
+// ================================================================
+function doPost(e) {
+  var out = ContentService.createTextOutput();
+  out.setMimeType(ContentService.MimeType.JSON);
+  try {
+    var body = JSON.parse(e.postData.contents);
+    var fn = body.fn, args = body.args || [], result;
+    if      (fn==='getRooms')       result=getRooms();
+    else if (fn==='getHours')       result=getHours();
+    else if (fn==='getBusy')        result=getBusy(args[0],args[1]);
+    else if (fn==='submitBooking')  result=submitBooking(args[0]);
+    else if (fn==='approveBooking') result=approveBooking(args[0],args[1]);
+    else if (fn==='getRoomStatus')  result=getRoomStatus(args[0]);
+    else throw new Error('Unknown function: '+fn);
+    out.setContent(JSON.stringify({ok:true,data:result}));
+  } catch(err) {
+    out.setContent(JSON.stringify({ok:false,error:err.message}));
+  }
+  return out;
+}
+
+// ================================================================
+// doGet — approve / reject from email links
+// ================================================================
+function doGet(e) {
+  var id      = e.parameter.id;
+  var action  = e.parameter.action;
+  var token   = e.parameter.token || '';
+  var reason  = e.parameter.reason || '';
+
+  if (!id) return HtmlService.createHtmlOutput('<p>Kuwait Hospital Room Booking System</p>');
+
+  var currentStatus = getBookingStatus(id);
+
+  if (currentStatus === 'Approved' && action === 'reject')
+    return HtmlService.createHtmlOutput(lockedPage(id,'Approved','This booking is already APPROVED.'));
+  if (currentStatus === 'Rejected' && action === 'approve')
+    return HtmlService.createHtmlOutput(lockedPage(id,'Rejected','This booking is already REJECTED.'));
+  if ((currentStatus==='Approved' && action==='approve') ||
+      (currentStatus==='Rejected' && action==='reject'))
+    return HtmlService.createHtmlOutput(alreadyDonePage(id,currentStatus));
+
+  if (action === 'approve') {
+    var storedToken = getApproveToken(id);
+    if (!token || token !== storedToken) {
+      return HtmlService.createHtmlOutput(confirmApprovePage(id, storedToken));
     }
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) {
-        --blue:#4a90d9; --blue-mid:#5ba0e8; --blue-soft:#1a2e48;
-        --ink:#e8edf5; --sub:#a8b4c8; --muted:#7a8aa0; --line:#2a3a52;
-        --bg:#0d1520; --card:#141e2e; --field:#1a2438; color-scheme:dark;
+    try {
+      var r = approveBooking(id,'Approved','');
+      clearApproveToken(id);
+      return HtmlService.createHtmlOutput(approvedPage(id,r));
+    } catch(err) {
+      return HtmlService.createHtmlOutput(errorPage(err.message,id));
+    }
+  }
+
+  if (action === 'reject' && reason) {
+    try {
+      var r = approveBooking(id,'Rejected',decodeURIComponent(reason));
+      return HtmlService.createHtmlOutput(rejectedPage(id,r,decodeURIComponent(reason)));
+    } catch(err) {
+      return HtmlService.createHtmlOutput(errorPage(err.message,id));
+    }
+  }
+
+  if (action === 'reject')
+    return HtmlService.createHtmlOutput(rejectFormPage(id));
+
+  return HtmlService.createHtmlOutput('<p>Kuwait Hospital Room Booking System</p>');
+}
+
+function getApproveToken(id) {
+  var sheet=getSheet('Bookings'), rows=sheet.getDataRange().getValues();
+  for (var i=1;i<rows.length;i++) {
+    if (rows[i][0]===id) return rows[i][18]||'';
+  }
+  return '';
+}
+function clearApproveToken(id) {
+  var sheet=getSheet('Bookings'), rows=sheet.getDataRange().getValues();
+  for (var i=1;i<rows.length;i++) {
+    if (rows[i][0]===id) { sheet.getRange(i+1,19).setValue(''); return; }
+  }
+}
+function getBookingStatus(id) {
+  var sheet=getSheet('Bookings'), rows=sheet.getDataRange().getValues();
+  for (var i=1;i<rows.length;i++) { if (rows[i][0]===id) return rows[i][1]; }
+  return null;
+}
+
+// ================================================================
+// CORE FUNCTIONS
+// ================================================================
+function getRooms() { return ROOMS; }
+function getHours() { return HOURS; }
+
+function getBusy(roomName,dateStr) {
+  var sheet=getSheet('Bookings'), rows=sheet.getDataRange().getValues(), busy=[];
+  for (var i=1;i<rows.length;i++) {
+    var r=rows[i];
+    if (r[2]===roomName && fmtDate(r[3])===dateStr &&
+        r[1]!=='Rejected' && r[1]!=='Cancelled') {
+      busy.push({id:r[0],start:toTimeStr(r[4]),end:toTimeStr(r[5]),
+                 title:r[11]||'Meeting',host:r[10]||'',dept:r[7]||'',priv:r[15]==='Yes'});
+    }
+  }
+  return busy;
+}
+
+function submitBooking(data) {
+  var sheet=getSheet('Bookings'), id=newId();
+  var token=newToken();
+  var when=data.date+'  '+data.start+'–'+data.end;
+
+  sheet.appendRow([id,'Pending',data.room,data.date,data.start,data.end,
+    data.name,data.dept,data.email,data.mobile||'',
+    data.host||'',data.title,data.attendees,
+    data.needs||'',data.refresh||'',data.priv?'Yes':'No',data.notes||'',new Date(),
+    token]);
+
+  // Email 1 — Acknowledgement to requester
+  sendMail(data.email,
+    'Booking Request Received – '+data.room,
+    'Dear '+data.name+',\n\n'+
+    'Your meeting room booking request has been received and is pending coordinator approval.\n\n'+
+    'Reference  : '+id+'\n'+
+    'Room       : '+data.room+'\n'+
+    'Date       : '+fmtDateDisplay(data.date)+'\n'+
+    'Time       : '+data.start+' – '+data.end+'\n'+
+    'Organizer  : '+(data.host||data.name)+'\n'+
+    'Meeting    : '+data.title+'\n'+
+    'Attendees  : '+data.attendees+'\n\n'+
+    'You will receive a confirmation once the coordinator approves.\n\n'+
+    'Regards,\nKuwait Hospital – Room Booking System');
+
+  // Email 2 — Coordinator approval email
+  var base=ScriptApp.getService().getUrl();
+  var approveUrl=base+'?id='+id+'&action=approve';
+  var rejectUrl=base+'?id='+id+'&action=reject';
+
+  sendHtmlMail(ADMIN_EMAIL,
+    'New Room Request – '+data.room+' – '+id,
+    '==============================================\n'+
+    'KUWAIT HOSPITAL – NEW BOOKING REQUEST\n'+
+    '==============================================\n\n'+
+    'Reference  : '+id+'\n'+
+    'Room       : '+data.room+'\n'+
+    'Date       : '+fmtDateDisplay(data.date)+'\n'+
+    'Time       : '+data.start+' – '+data.end+'\n'+
+    'Organizer  : '+(data.host||data.name)+'\n'+
+    'Meeting    : '+data.title+'\n'+
+    'Attendees  : '+data.attendees+'\n'+
+    'Submitted  : '+data.name+' ('+data.dept+')\n'+
+    'IT Needs   : '+(data.needs||'None')+'\n'+
+    'Refreshm.  : '+(data.refresh||'None')+'\n\n'+
+    '----------------------------------------------\n'+
+    'TO APPROVE → click link → then click YES button on the page:\n'+approveUrl+'\n\n'+
+    'TO REJECT  → click link → enter reason:\n'+rejectUrl+'\n'+
+    '----------------------------------------------\n'+
+    'Kuwait Hospital – Room Booking System',
+    adminEmailHtml(id,data.room,fmtDateDisplay(data.date),data.start+' – '+data.end,
+      data.host||data.name,data.title,data.attendees,
+      data.needs||'None',data.refresh||'None',data.notes||'None',
+      data.name,data.dept,approveUrl,rejectUrl)
+  );
+
+  return {status:'Pending',room:data.room,when:when,id:id};
+}
+
+function approveBooking(id,newStatus,reason) {
+  var sheet=getSheet('Bookings'), rows=sheet.getDataRange().getValues();
+  for (var i=1;i<rows.length;i++) {
+    if (rows[i][0]===id) {
+      var name=rows[i][6], email=rows[i][8], room=rows[i][2];
+      var dateV=fmtDate(rows[i][3]);
+      var start=toTimeStr(rows[i][4]), end=toTimeStr(rows[i][5]);
+      var host=rows[i][10]||name, title=rows[i][11]||'';
+      var atts=rows[i][12]||'', needs=rows[i][13]||'', refr=rows[i][14]||'';
+      var when=fmtDateDisplay(dateV)+'  '+start+' – '+end;
+
+      if (newStatus==='Approved') {
+        var existing=getBusy(room,dateV);
+        var sMin=toMin(start), eMin=toMin(end);
+        for (var j=0;j<existing.length;j++) {
+          var bk=existing[j];
+          if (bk.id===id) continue;
+          if (sMin<toMin(bk.end) && eMin>toMin(bk.start))
+            throw new Error('Time conflict! '+start+'–'+end+' overlaps '+bk.start+'–'+bk.end+
+              ' in '+room+' on '+fmtDateDisplay(dateV)+'. Please reject and ask requester to choose different time.');
+        }
       }
-    }
-    :root[data-theme="dark"] {
-      --blue:#4a90d9; --blue-mid:#5ba0e8; --blue-soft:#1a2e48;
-      --ink:#e8edf5; --sub:#a8b4c8; --muted:#7a8aa0; --line:#2a3a52;
-      --bg:#0d1520; --card:#141e2e; --field:#1a2438; color-scheme:dark;
-    }
-    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    body {
-      background:var(--bg); color:var(--ink);
-      font-family:'Inter',system-ui,-apple-system,sans-serif;
-      font-size:13.5px; line-height:1.45;
-      padding-left:max(16px,env(safe-area-inset-left,0px));
-      padding-right:max(16px,env(safe-area-inset-right,0px));
-      padding-block:0; min-height:100%;
-    }
 
-    /* Header */
-    .band {
-      position:sticky; top:env(safe-area-inset-top,0px); z-index:30;
-      background:var(--blue); color:#fff;
-      padding:8px max(16px,env(safe-area-inset-left,0px));
-      box-shadow:0 2px 12px rgba(8,40,80,.3);
-      margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));
-      margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));
-    }
-    .band-in { max-width:1020px; margin:0 auto; display:flex; align-items:center; gap:14px; }
-    .logo-box {
-      height:46px; background:#fff; border-radius:7px;
-      display:flex; align-items:center; justify-content:center; flex:none; padding:5px 8px;
-    }
-    .logo-box img { height:36px; width:auto; display:block; }
-    h1 { font-size:19px; font-weight:600; letter-spacing:-.2px; }
+      sheet.getRange(i+1,2).setValue(newStatus);
 
-    /* Main */
-    main { max-width:1020px; margin:14px auto 20px; }
-    .card {
-      background:var(--card); border:1px solid var(--line);
-      border-radius:14px; padding:18px 22px 16px;
-      box-shadow:0 4px 24px rgba(11,74,143,.08);
-    }
-    .req-note { font-size:12px; color:var(--muted); margin-bottom:14px; }
-    .req-note b { color:var(--err); }
-
-    /* 4-zone grid */
-    .cols { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto; gap:0 26px; }
-    .col { display:flex; flex-direction:column; min-width:0; }
-    .col-tl { grid-column:1; grid-row:1; }
-    .col-tr { grid-column:2; grid-row:1; }
-    .col-bl { grid-column:1; grid-row:2; }
-    .col-br { grid-column:2; grid-row:2; }
-
-    /* Section heading */
-    .sec {
-      font-size:10.5px; font-weight:700; letter-spacing:1.4px;
-      text-transform:uppercase; color:var(--blue);
-      border-bottom:2px solid var(--blue-soft);
-      padding-bottom:5px; margin:14px 0 10px;
-    }
-    .col-tl .sec:first-child,
-    .col-tr .sec:first-child { margin-top:0; }
-
-    /* Fields */
-    .row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:9px; }
-    .row1 { margin-bottom:9px; }
-    label, .lbl { font-size:12px; color:var(--sub); font-weight:500; display:block; margin-bottom:4px; }
-    .req-mark::after { content:" *"; color:var(--err); font-weight:600; }
-
-    input[type=text],input[type=email],input[type=tel],input[type=number],select,textarea {
-      width:100%; padding:7px 10px;
-      border:1.5px solid var(--line); border-radius:7px;
-      font:inherit; color:var(--ink); background:var(--field);
-      transition:border-color .15s,box-shadow .15s;
-      appearance:none; -webkit-appearance:none;
-    }
-    input:focus,select:focus,textarea:focus {
-      outline:none; border-color:var(--blue-mid);
-      box-shadow:0 0 0 3px rgba(11,74,143,.12); background:var(--card);
-    }
-    .sw { position:relative; }
-    .sw select { padding-right:30px; cursor:pointer; }
-    .sw::after {
-      content:""; pointer-events:none; position:absolute; right:11px; top:50%; transform:translateY(-50%);
-      width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:5px solid var(--muted);
-    }
-    .hint { font-size:11px; color:var(--muted); margin-top:3px; min-height:1em; }
-
-    /* Date / time row */
-    .dt-row { display:grid; grid-template-columns:1.35fr 1fr 1fr; gap:8px; }
-    .sublbl { font-size:11px; color:var(--muted); font-weight:500; margin-bottom:4px; }
-    .date-btn {
-      width:100%; display:flex; align-items:center; justify-content:space-between;
-      padding:7px 10px; border:1.5px solid var(--line); border-radius:7px;
-      background:var(--field); color:var(--muted); font:inherit; cursor:pointer;
-      transition:border-color .15s,box-shadow .15s;
-    }
-    .date-btn.filled { color:var(--ink); }
-    .date-btn:focus { outline:none; border-color:var(--blue-mid); box-shadow:0 0 0 3px rgba(11,74,143,.12); background:var(--card); }
-    .date-btn .ico { width:16px; height:16px; flex:none; opacity:.45; }
-
-    /* Fieldsets */
-    .fsets { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    fieldset { border:1.5px solid var(--line); border-radius:9px; padding:9px 11px 11px; background:var(--field); margin:0; min-width:0; }
-    legend { font-size:11.5px; color:var(--sub); padding:0 5px; font-weight:600; }
-    legend small { color:var(--muted); font-weight:400; }
-    .checks { display:grid; grid-template-columns:1fr 1fr; gap:7px 8px; margin-top:7px; }
-    .check { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink); cursor:pointer; }
-    .check input[type=checkbox] {
-      width:15px; height:15px; flex:none; cursor:pointer;
-      accent-color:var(--blue); appearance:auto; -webkit-appearance:auto;
-      border:1.5px solid var(--line); border-radius:3px;
-    }
-    .food-extra { margin-top:8px; }
-
-    /* Bottom bar */
-    .bottom {
-      display:grid; grid-template-columns:auto 1fr auto;
-      gap:14px; align-items:end;
-      border-top:1px solid var(--line); margin-top:12px; padding-top:12px;
-    }
-    .priv-block { padding-bottom:0; }
-    .priv-lbl { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; cursor:pointer; }
-    .priv-lbl input[type=checkbox] {
-      width:15px; height:15px; flex:none; cursor:pointer;
-      accent-color:var(--blue); appearance:auto; -webkit-appearance:auto;
-    }
-    .priv-desc { font-size:11px; color:var(--muted); margin:5px 0 0 23px; line-height:1.55; }
-
-    .notes-block { display:flex; flex-direction:column; gap:4px; }
-    .notes-block label { color:var(--sub); }
-    textarea#notes { resize:vertical; min-height:52px; display:block; }
-
-    .send-block { display:flex; align-items:flex-end; }
-    .send-btn {
-      padding:0 28px; border:0; border-radius:8px;
-      background:var(--blue); color:#fff; font:600 14px/1 inherit;
-      cursor:pointer; white-space:nowrap;
-      height:52px;
-      box-shadow:0 2px 10px rgba(11,74,143,.28);
-      transition:background .15s,box-shadow .15s;
-    }
-    .send-btn:hover { background:var(--blue-mid); box-shadow:0 4px 14px rgba(11,74,143,.36); }
-    .send-btn:focus-visible { outline:3px solid var(--blue-soft); outline-offset:2px; }
-    .send-btn:disabled { opacity:.55; cursor:not-allowed; }
-
-    /* Status message */
-    #msg {
-      margin-top:10px; padding:10px 14px; border-radius:8px;
-      font-size:13px; display:none; line-height:1.5;
-    }
-    #msg.ok  { background:#dcfce7; color:var(--ok); display:block; }
-    #msg.err { background:#fee2e2; color:var(--err); display:block; }
-    #msg.inf { background:var(--blue-soft); color:var(--blue); display:block; }
-
-    /* Spinner */
-    .spin { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.4);
-            border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; vertical-align:middle; margin-right:6px; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-
-    /* Mobile */
-    @media (max-width:720px) {
-      .cols { grid-template-columns:1fr; }
-      .col-tl,.col-tr,.col-bl,.col-br { grid-column:1; grid-row:auto; }
-      .fsets,.row2,.dt-row,.checks,.bottom { grid-template-columns:1fr; }
-      h1 { font-size:16px; }
-      .send-block { justify-content:stretch; }
-      .send-btn { width:100%; }
-    }
-  </style>
-</head>
-<body>
-
-<header class="band">
-  <div class="band-in">
-    <div class="logo-box"><img src="logo.png" alt="Kuwait Hospital"></div>
-    <h1>Book a Meeting Room</h1>
-  </div>
-</header>
-
-<main>
-  <div class="card">
-    <p class="req-note">Fields marked <b>*</b> are required. Please use your hospital email address.</p>
-
-    <div class="cols">
-
-      <!-- TOP-LEFT: Requester Details -->
-      <div class="col col-tl">
-        <div class="sec">Requester Details</div>
-        <div class="row2">
-          <div>
-            <label for="name" class="req-mark">Your name</label>
-            <input type="text" id="name" placeholder="e.g. Fatima Al-Rashidi" autocomplete="name">
-          </div>
-          <div>
-            <label for="dept" class="req-mark">Department</label>
-            <input type="text" id="dept" placeholder="e.g. Cardiology">
-          </div>
-        </div>
-        <div class="row2">
-          <div>
-            <label for="email" class="req-mark">Hospital email</label>
-            <input type="email" id="email" placeholder="name@kuwaithospital.com.kw" autocomplete="email">
-          </div>
-          <div>
-            <label for="mobile">Mobile / extension</label>
-            <input type="tel" id="mobile" placeholder="e.g. 965 1234 5678">
-          </div>
-        </div>
-      </div>
-
-      <!-- TOP-RIGHT: Date & Time -->
-      <div class="col col-tr">
-        <div class="sec">Date &amp; Time</div>
-        <div class="row1">
-          <div class="lbl req-mark" style="margin-bottom:7px;">Select date and time</div>
-          <div class="dt-row">
-            <div>
-              <div class="sublbl">Date</div>
-              <button type="button" class="date-btn" id="dateBtn">
-                <span id="dateTxt">dd / mm / yyyy</span>
-                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
-              </button>
-              <input type="date" id="dateInput" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;">
-            </div>
-            <div>
-              <div class="sublbl">Start</div>
-              <div class="sw">
-                <select id="startSel" disabled>
-                  <option value="">Select room first</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <div class="sublbl">End</div>
-              <div class="sw">
-                <select id="endSel" disabled>
-                  <option value="">Choose start first</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- BOTTOM-LEFT: Meeting Details -->
-      <div class="col col-bl">
-        <div class="sec">Meeting Details</div>
-        <div class="row2">
-          <div>
-            <label for="host" class="req-mark">Host / Organizer</label>
-            <input type="text" id="host" placeholder="e.g. Dr. Khalid Al-Rashidi">
-          </div>
-          <div>
-            <label for="title" class="req-mark">Meeting / Event title</label>
-            <input type="text" id="title" placeholder="e.g. Cardiology Review">
-          </div>
-        </div>
-        <div class="row2">
-          <div>
-            <label for="room" class="req-mark">Room</label>
-            <div class="sw">
-              <select id="room">
-                <option value="">Loading rooms…</option>
-              </select>
-            </div>
-            <span class="hint" id="roomHint"></span>
-          </div>
-          <div>
-            <label for="attendees" class="req-mark">Attendees</label>
-            <input type="number" id="attendees" min="1" max="500" placeholder="e.g. 8">
-          </div>
-        </div>
-      </div>
-
-      <!-- BOTTOM-RIGHT: Requirements & Extras -->
-      <div class="col col-br">
-        <div class="sec">Requirements &amp; Extras</div>
-        <div class="fsets">
-          <fieldset>
-            <legend>IT requirements <small>– IT Support</small></legend>
-            <div class="checks">
-              <label class="check"><input type="checkbox" name="it" value="Laptop"> Laptop</label>
-              <label class="check"><input type="checkbox" name="it" value="Projector"> Projector</label>
-              <label class="check"><input type="checkbox" name="it" value="Video conf."> Video conf.</label>
-              <label class="check"><input type="checkbox" name="it" value="Mic/Speakers"> Mic/Speakers</label>
-              <label class="check"><input type="checkbox" name="it" value="Whiteboard"> Whiteboard</label>
-              <label class="check"><input type="checkbox" name="it" value="Printer/Clicker"> Printer/Clicker</label>
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend>Refreshments <small>– Hospitality</small></legend>
-            <div class="checks">
-              <label class="check"><input type="checkbox" name="rf" value="Water"> Water</label>
-              <label class="check"><input type="checkbox" name="rf" value="Tea/Coffee"> Tea / Coffee</label>
-              <label class="check"><input type="checkbox" name="rf" value="Juice"> Juice</label>
-              <label class="check"><input type="checkbox" name="rf" value="Snacks"> Snacks</label>
-            </div>
-            <div class="food-extra">
-              <textarea id="rfOther" rows="2" placeholder="Other details (optional)" style="resize:vertical;min-height:36px;width:100%;"></textarea>
-            </div>
-          </fieldset>
-        </div>
-      </div>
-
-    </div><!-- .cols -->
-
-    <!-- BOTTOM BAR -->
-    <div class="bottom">
-      <div class="priv-block">
-        <label class="priv-lbl">
-          <input type="checkbox" id="priv"> <strong>Private meeting</strong>
-        </label>
-        <p class="priv-desc">Room screen shows "Private meeting"<br>instead of the title and your name.</p>
-      </div>
-
-      <div class="notes-block">
-        <label for="notes">Notes</label>
-        <textarea id="notes" rows="2" placeholder="Any additional information for the approver…"></textarea>
-      </div>
-
-      <div class="send-block">
-        <button class="send-btn" id="sendBtn" type="button">Send booking request</button>
-      </div>
-    </div>
-
-    <div id="msg"></div>
-
-  </div><!-- .card -->
-</main>
-
-<script>
-// ── Config ────────────────────────────────────────────────────────
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbwM9MzgGc_8xWvrqgB80MDjIGNCyrbj15OHZBYXPY1bEpLURpBDZOrqdfV-j-RESyBg/exec';
-
-var ROOMS_DATA = [];
-var HOURS_DATA = { start:'08:00', end:'17:00', step:30, maxHours:8, days:[0,1,2,3,4] };
-var selectedDate = '';
-
-// ── GAS call helper ───────────────────────────────────────────────
-function callGas(fn, args, ok, fail) {
-  var body = JSON.stringify({ fn: fn, args: args || [] });
-  fetch(GAS_URL, { method:'POST', body: body })
-    .then(function(r){ return r.json(); })
-    .then(function(d){ d.ok ? ok(d.data) : fail(d.error); })
-    .catch(function(e){ fail(e.message); });
-}
-
-// ── Load rooms on start ───────────────────────────────────────────
-callGas('getRooms', [], function(rooms) {
-  ROOMS_DATA = rooms;
-  var sel = document.getElementById('room');
-  sel.innerHTML = '<option value="">Select room</option>';
-  rooms.forEach(function(r) {
-    var opt = document.createElement('option');
-    opt.value = r.name;
-    opt.textContent = r.name + ' (' + r.location + ')';
-    sel.appendChild(opt);
-  });
-}, function(err) {
-  document.getElementById('room').innerHTML = '<option value="">Could not load rooms</option>';
-  console.warn('getRooms error:', err);
-});
-
-callGas('getHours', [], function(h) { HOURS_DATA = h; }, function(){});
-
-// ── Room change ───────────────────────────────────────────────────
-document.getElementById('room').addEventListener('change', function() {
-  var roomName = this.value;
-  var room = ROOMS_DATA.find(function(r){ return r.name === roomName; });
-  document.getElementById('roomHint').textContent = room
-    ? room.location + ' · needs approval'
-    : '';
-  refreshTimeSlots();
-});
-
-// ── Date picker ───────────────────────────────────────────────────
-document.getElementById('dateBtn').addEventListener('click', function() {
-  var di = document.getElementById('dateInput');
-  di.showPicker ? di.showPicker() : di.click();
-});
-
-document.getElementById('dateInput').addEventListener('change', function() {
-  if (!this.value) return;
-  selectedDate = this.value;
-  var parts = this.value.split('-');
-  var d = parts[2], m = parts[1], y = parts[0];
-  var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  var dow = days[new Date(this.value).getDay()];
-  document.getElementById('dateTxt').textContent = d + ' / ' + m + ' / ' + y + '  (' + dow + ')';
-  document.getElementById('dateBtn').classList.add('filled');
-  refreshTimeSlots();
-});
-
-// ── Time slots ────────────────────────────────────────────────────
-function ymd(dt) {
-  return dt.getFullYear() + '-' +
-    String(dt.getMonth()+1).padStart(2,'0') + '-' +
-    String(dt.getDate()).padStart(2,'0');
-}
-
-function refreshTimeSlots() {
-  var roomName = document.getElementById('room').value;
-  var startSel = document.getElementById('startSel');
-  var endSel   = document.getElementById('endSel');
-
-  startSel.innerHTML = '<option value="">Loading…</option>';
-  startSel.disabled = true;
-  endSel.innerHTML  = '<option value="">Choose start first</option>';
-  endSel.disabled   = true;
-
-  if (!roomName || !selectedDate) {
-    startSel.innerHTML = '<option value="">Select room &amp; date first</option>';
-    return;
-  }
-
-  // Past-date guard
-  var todayIso = ymd(new Date());
-  if (selectedDate < todayIso) {
-    say('The selected date is in the past. Please choose today or a future date.', 'err');
-    startSel.innerHTML = '<option value="">Select a valid date first</option>';
-    return;
-  }
-
-  callGas('getBusy', [roomName, selectedDate], function(busy) {
-    var h = HOURS_DATA;
-    var step = h.step || 30;
-    var times = [];
-    var cur = timeToMin(h.start);
-    var end = timeToMin(h.end);
-    while (cur <= end) { times.push(minToTime(cur)); cur += step; }
-
-    startSel.innerHTML = '<option value="">Select start time</option>';
-    times.forEach(function(t) {
-      var blocked = busy.some(function(b) {
-        return timeToMin(t) >= timeToMin(b.start) && timeToMin(t) < timeToMin(b.end);
-      });
-      if (!blocked) {
-        var opt = document.createElement('option');
-        opt.value = t; opt.textContent = t;
-        startSel.appendChild(opt);
+      if (newStatus==='Approved') {
+        sendMail(email,'Booking Approved – '+room,
+          'Dear '+name+',\n\nYour meeting room booking has been APPROVED.\n\n'+
+          'Reference  : '+id+'\nRoom       : '+room+'\nDate       : '+fmtDateDisplay(dateV)+
+          '\nTime       : '+start+' – '+end+'\nOrganizer  : '+host+
+          '\nMeeting    : '+title+'\nAttendees  : '+atts+
+          '\n\nPlease arrive on time. Contact the coordinator if you need to cancel.\n\n'+
+          'Regards,\nKuwait Hospital – Room Booking System');
+        sendItEmail(room,fmtDateDisplay(dateV),start,end,title,host,atts,needs);
+        sendHospEmail(room,fmtDateDisplay(dateV),start,end,title,atts,refr);
+      } else {
+        sendMail(email,'Booking Rejected – '+room,
+          'Dear '+name+',\n\nYour booking request has been REJECTED.\n\n'+
+          'Reference  : '+id+'\nRoom       : '+room+'\nDate       : '+fmtDateDisplay(dateV)+
+          '\nTime       : '+start+' – '+end+'\nOrganizer  : '+host+'\nMeeting    : '+title+
+          '\n\nReason:\n'+(reason||'No reason provided.')+
+          '\n\nContact the Room Coordinator if you have questions.\n\n'+
+          'Regards,\nKuwait Hospital – Room Booking System');
       }
-    });
-    startSel.disabled = false;
-  }, function(err) {
-    startSel.innerHTML = '<option value="">Error loading slots</option>';
-    console.warn('getBusy error:', err);
-  });
-}
-
-document.getElementById('startSel').addEventListener('change', function() {
-  var endSel = document.getElementById('endSel');
-  var startMin = timeToMin(this.value);
-  if (!this.value) { endSel.disabled = true; endSel.innerHTML = '<option value="">Choose start first</option>'; return; }
-
-  var h = HOURS_DATA;
-  var step = h.step || 30;
-  var maxMin = h.maxHours ? startMin + h.maxHours * 60 : 9999;
-  var endLimit = timeToMin(h.end);
-
-  endSel.innerHTML = '<option value="">Select end time</option>';
-  var t = startMin + step;
-  var i = 1;
-  while (t <= endLimit && t <= maxMin) {
-    var mins = i * step;
-    var label = minToTime(t) + '  (' + (mins >= 60 ? Math.floor(mins/60) + ' h' + (mins % 60 ? ' 30 min' : '') : mins + ' min') + ')';
-    endSel.add(new Option(label, minToTime(t)));
-    t += step; i++;
+      return {status:newStatus,room:room,when:when,id:id};
+    }
   }
-  endSel.disabled = false;
-});
-
-// ── Submit ────────────────────────────────────────────────────────
-document.getElementById('sendBtn').addEventListener('click', function() {
-  var name      = v('name');
-  var dept      = v('dept');
-  var email     = v('email');
-  var mobile    = v('mobile');
-  var host      = v('host');
-  var title     = v('title');
-  var roomName  = v('room');
-  var attendees = v('attendees');
-  var notes     = v('notes');
-  var priv      = document.getElementById('priv').checked;
-
-  // Validation
-  if (!name)      return say('Please enter your name.', 'err');
-  if (!dept)      return say('Please enter your department.', 'err');
-  if (!email)     return say('Please enter your hospital email address.', 'err');
-  if (!email.toLowerCase().endsWith('@kuwaithospital.com.kw'))
-                  return say('Please use your hospital email address (@kuwaithospital.com.kw).', 'err');
-  if (!host)      return say('Please enter the host / organizer name.', 'err');
-  if (!title)     return say('Please enter a meeting title.', 'err');
-  if (!roomName)  return say('Please select a room.', 'err');
-  if (!attendees) return say('Please enter the number of attendees.', 'err');
-  if (!selectedDate) return say('Please select a date.', 'err');
-
-  var todayIso = ymd(new Date());
-  if (selectedDate < todayIso) return say('The selected date is in the past. Please choose today or a future date.', 'err');
-
-  if (!document.getElementById('startSel').value) return say('Please select a start time.', 'err');
-  if (!document.getElementById('endSel').value)   return say('Please select an end time.', 'err');
-
-  // Collect checkboxes
-  var itChecks = Array.from(document.querySelectorAll('input[name="it"]:checked')).map(function(c){ return c.value; });
-  var rfChecks = Array.from(document.querySelectorAll('input[name="rf"]:checked')).map(function(c){ return c.value; });
-  var rfOther  = v('rfOther');
-  if (rfOther) rfChecks.push(rfOther);
-
-  var data = {
-    name:      name,
-    dept:      dept,
-    email:     email,
-    mobile:    mobile,
-    host:      host,
-    title:     title,
-    room:      roomName,
-    date:      selectedDate,
-    start:     document.getElementById('startSel').value,
-    end:       document.getElementById('endSel').value,
-    attendees: attendees,
-    needs:     itChecks.join(', ') || '',
-    refresh:   rfChecks.join(', ') || '',
-    priv:      priv,
-    notes:     notes
-  };
-
-  var btn = document.getElementById('sendBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span>Sending…';
-  say('Submitting your booking request…', 'inf');
-
-  callGas('submitBooking', [data], function(result) {
-    btn.disabled = false;
-    btn.textContent = 'Send booking request';
-    say('✓ Booking submitted! Reference: <b>' + result.id + '</b><br>' +
-        result.room + ' · ' + result.when + '<br>A confirmation email has been sent to ' + email + '.', 'ok');
-  }, function(err) {
-    btn.disabled = false;
-    btn.textContent = 'Send booking request';
-    say('Could not submit booking: ' + err, 'err');
-  });
-});
-
-// ── Helpers ───────────────────────────────────────────────────────
-function v(id) { return document.getElementById(id).value.trim(); }
-function say(html, type) {
-  var el = document.getElementById('msg');
-  el.innerHTML = html;
-  el.className = type;
-  el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  throw new Error('Booking not found: '+id);
 }
-function timeToMin(t) { if (!t) return 0; var p = t.split(':'); return parseInt(p[0]) * 60 + parseInt(p[1]); }
-function minToTime(m) { return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0'); }
-</script>
 
-</body>
-</html>
+function getRoomStatus(roomName) {
+  var now=new Date(), today=fmtDate(now);
+  var busy=getBusy(roomName,today);
+  var room=ROOMS.find(function(r){ return r.name===roomName; })||{};
+  var meetings=busy.map(function(b){
+    return {start:b.start,end:b.end,startMs:dateTimeMs(today,b.start),
+            endMs:dateTimeMs(today,b.end),title:b.title,host:b.host,dept:b.dept,priv:b.priv};
+  }).sort(function(a,b){ return a.startMs-b.startMs; });
+  return {room:roomName,today:now.toDateString(),capacity:room.capacity||'',
+          location:room.location||'',now:now.getTime(),meetings:meetings};
+}
+
+// ================================================================
+// HTML EMAIL
+// ================================================================
+function adminEmailHtml(id,room,date,time,organizer,title,attendees,
+                        needs,refresh,notes,reqName,dept,approveUrl,rejectUrl) {
+  return '<!DOCTYPE html><html><head><meta charset="utf-8">'+
+  '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'+
+  '<body style="margin:0;padding:0;background:#f0f4fa;font-family:Segoe UI,Arial,sans-serif">'+
+  '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">'+
+  '<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">'+
+  '<tr><td style="background:#0D2D6B;border-radius:12px 12px 0 0;padding:22px 28px">'+
+  '<table cellpadding="0" cellspacing="0"><tr>'+
+  '<td style="background:rgba(255,255,255,.15);border-radius:8px;width:44px;height:44px;text-align:center;vertical-align:middle;font-size:16px;font-weight:700;color:#fff">KH</td>'+
+  '<td style="padding-left:12px"><div style="color:#fff;font-size:16px;font-weight:600">Kuwait Hospital</div>'+
+  '<div style="color:rgba(255,255,255,.7);font-size:12px">Meeting Room Booking System</div></td></tr></table></td></tr>'+
+  '<tr><td style="background:#1A3A7A;padding:12px 28px">'+
+  '<div style="color:#fff;font-size:13px;font-weight:600">NEW BOOKING REQUEST &nbsp;'+
+  '<span style="background:#fef9c3;color:#854d0e;font-size:11px;padding:3px 10px;border-radius:20px">PENDING APPROVAL</span></div>'+
+  '<div style="color:rgba(255,255,255,.8);font-size:12px;margin-top:3px">Ref: <b>'+id+'</b></div></td></tr>'+
+  '<tr><td style="background:#fff;padding:24px 28px">'+
+  '<div style="background:#f0f4fa;border-radius:8px;padding:11px 14px;margin-bottom:18px">'+
+  '<span style="font-size:12px;color:#5b6780">Submitted by: </span>'+
+  '<span style="font-size:13px;font-weight:600;color:#16233b">'+reqName+' ('+dept+')</span></div>'+
+  '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">'+
+  detailRow('Room',room,'#0D2D6B',true)+detailRow('Date',date,'#374151',false)+
+  detailRow('Time',time,'#374151',false)+detailRow('Organizer',organizer,'#374151',false)+
+  detailRow('Meeting',title,'#374151',false)+detailRow('Attendees',attendees,'#374151',false)+
+  detailRow('IT Needs',needs,'#374151',false)+detailRow('Refreshm.',refresh,'#374151',false)+
+  detailRow('Notes',notes,'#374151',false)+'</table>'+
+  '<div style="border-top:1px solid #e5e7eb;margin:20px 0"></div>'+
+  '<p style="font-size:13px;color:#5b6780;text-align:center;margin:0 0 16px">'+
+  'Click a button below — APPROVE opens a confirmation page before processing:</p>'+
+  '<table width="100%" cellpadding="0" cellspacing="0"><tr>'+
+  '<td style="padding-right:8px;width:50%">'+
+  '<a href="'+approveUrl+'" style="display:block;background:#166534;color:#fff;text-decoration:none;'+
+  'font-size:15px;font-weight:600;padding:14px 20px;border-radius:10px;text-align:center">&#10003;&nbsp;APPROVE</a></td>'+
+  '<td style="padding-left:8px;width:50%">'+
+  '<a href="'+rejectUrl+'" style="display:block;background:#b91c1c;color:#fff;text-decoration:none;'+
+  'font-size:15px;font-weight:600;padding:14px 20px;border-radius:10px;text-align:center">&#10007;&nbsp;REJECT</a></td>'+
+  '</tr></table>'+
+  '<p style="font-size:11px;color:#9ca3af;text-align:center;margin:14px 0 0">'+
+  'APPROVE → opens confirmation page → click YES to confirm. REJECT → opens reason form.</p>'+
+  '</td></tr>'+
+  '<tr><td style="background:#f9fafb;border-radius:0 0 12px 12px;padding:14px 28px;border-top:1px solid #e5e7eb;text-align:center">'+
+  '<p style="font-size:11px;color:#9ca3af;margin:0">Kuwait Hospital &nbsp;|&nbsp; Room Booking &nbsp;|&nbsp; IT Department</p>'+
+  '</td></tr></table></td></tr></table></body></html>';
+}
+
+function detailRow(label,value,color,isFirst) {
+  var bt=isFirst?'':'border-top:1px solid #f3f4f6';
+  return '<tr><td style="padding:9px 0;'+bt+';width:110px;vertical-align:top">'+
+    '<span style="font-size:12px;color:#6b7280;font-weight:500">'+label+'</span></td>'+
+    '<td style="padding:9px 0 9px 12px;'+bt+'">'+
+    '<span style="font-size:13px;color:'+color+';font-weight:'+(isFirst?'600':'400')+'">'+value+'</span></td></tr>';
+}
+
+// ================================================================
+// HTML PAGES
+// ================================================================
+function confirmApprovePage(id, token) {
+  var base=ScriptApp.getService().getUrl();
+  var sheet=getSheet('Bookings'),rows=sheet.getDataRange().getValues(),info='';
+  for (var i=1;i<rows.length;i++) {
+    if (rows[i][0]===id) {
+      info=rows[i][2]+'  |  '+fmtDateDisplay(fmtDate(rows[i][3]))+
+           '  |  '+toTimeStr(rows[i][4])+' – '+toTimeStr(rows[i][5])+
+           '  |  '+(rows[i][11]||''); break;
+    }
+  }
+  var approveWithToken=base+'?id='+id+'&action=approve&token='+encodeURIComponent(token);
+  return '<!DOCTYPE html><html><head><meta charset="utf-8">'+
+    '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+    '<style>*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;'+
+    'background:#f0f4fa;display:flex;align-items:center;justify-content:center;min-height:100vh}'+
+    '.card{background:#fff;border-radius:14px;max-width:480px;width:94vw;overflow:hidden;text-align:center}'+
+    '.hdr{background:#166534;color:#fff;padding:28px}.hdr h2{margin:0;font-size:20px;font-weight:600}'+
+    '.body{padding:24px}.info{background:#f0f4fa;border-radius:8px;padding:12px 14px;'+
+    'font-size:13px;color:#374151;margin-bottom:20px;text-align:left}'+
+    '.btns{display:flex;gap:12px}'+
+    '.ba{flex:1;background:#166534;color:#fff;border:none;border-radius:8px;padding:14px;'+
+    'font:600 15px Segoe UI,sans-serif;cursor:pointer;text-decoration:none;'+
+    'display:flex;align-items:center;justify-content:center}'+
+    '.br{flex:1;background:#b91c1c;color:#fff;border:none;border-radius:8px;padding:14px;'+
+    'font:600 15px Segoe UI,sans-serif;cursor:pointer;text-decoration:none;'+
+    'display:flex;align-items:center;justify-content:center}'+
+    '.foot{background:#f9fafb;border-top:1px solid #e5e7eb;padding:12px;font-size:11px;color:#9ca3af}'+
+    '</style></head><body>'+
+    '<div class="card"><div class="hdr"><h2>&#10003; Confirm Approval</h2></div>'+
+    '<div class="body">'+
+    '<p style="color:#374151;font-size:14px;margin:0 0 16px">Confirm you want to <b>APPROVE</b>:</p>'+
+    '<div class="info">'+info+'<br><br>Reference: <b>'+id+'</b></div>'+
+    '<div class="btns">'+
+    '<a href="'+approveWithToken+'" class="ba">&#10003; Yes, Approve</a>'+
+    '<a href="'+base+'?id='+id+'&action=reject" class="br">&#10007; Reject</a>'+
+    '</div></div>'+
+    '<div class="foot">Kuwait Hospital – Room Booking System</div>'+
+    '</div></body></html>';
+}
+
+function rejectFormPage(id) {
+  var base=ScriptApp.getService().getUrl();
+  var sheet=getSheet('Bookings'),rows=sheet.getDataRange().getValues(),info='';
+  for (var i=1;i<rows.length;i++) {
+    if (rows[i][0]===id) {
+      info=rows[i][2]+'  |  '+fmtDateDisplay(fmtDate(rows[i][3]))+
+           '  |  '+toTimeStr(rows[i][4])+' – '+toTimeStr(rows[i][5])+
+           '  |  '+(rows[i][11]||''); break;
+    }
+  }
+  return '<!DOCTYPE html><html><head><meta charset="utf-8">'+
+    '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+    '<style>*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;'+
+    'background:#f0f4fa;display:flex;align-items:center;justify-content:center;min-height:100vh}'+
+    '.card{background:#fff;border-radius:14px;max-width:520px;width:94vw;overflow:hidden}'+
+    '.hdr{background:#b91c1c;color:#fff;padding:22px 26px}'+
+    '.hdr h2{margin:0 0 3px;font-size:19px;font-weight:600}.hdr p{margin:0;font-size:12px;opacity:.85}'+
+    '.body{padding:22px 26px}'+
+    '.info{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;'+
+    'font-size:13px;color:#92400e;margin-bottom:18px}'+
+    'label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}'+
+    'textarea{width:100%;padding:12px;border:1.5px solid #d1d5db;border-radius:8px;'+
+    'font:14px Segoe UI,Arial,sans-serif;resize:vertical;min-height:96px}'+
+    'textarea:focus{outline:none;border-color:#b91c1c}'+
+    '.hint{font-size:12px;color:#6b7280;margin-top:4px}'+
+    '.btns{display:flex;gap:12px;margin-top:18px}'+
+    '.br{flex:1;background:#b91c1c;color:#fff;border:none;border-radius:8px;padding:12px;'+
+    'font:600 14px Segoe UI,Arial,sans-serif;cursor:pointer}'+
+    '.ba{flex:1;background:#166534;color:#fff;border:none;border-radius:8px;padding:12px;'+
+    'font:600 14px Segoe UI,Arial,sans-serif;cursor:pointer;text-decoration:none;'+
+    'display:flex;align-items:center;justify-content:center}'+
+    '.foot{background:#f9fafb;border-top:1px solid #e5e7eb;padding:12px 26px;'+
+    'text-align:center;font-size:11px;color:#9ca3af}'+
+    '</style></head><body>'+
+    '<div class="card"><div class="hdr"><h2>&#10007; Reject Booking</h2>'+
+    '<p>Reference: <b>'+id+'</b></p></div>'+
+    '<div class="body"><div class="info">&#128203; '+info+'</div>'+
+    '<form method="GET" action="'+base+'">'+
+    '<input type="hidden" name="id" value="'+id+'">'+
+    '<input type="hidden" name="action" value="reject">'+
+    '<label>Reason for rejection <span style="color:#b91c1c">*</span></label>'+
+    '<textarea name="reason" required '+
+    'placeholder="e.g. Room already reserved. Please choose a different date."></textarea>'+
+    '<p class="hint">This reason will be sent to the requester.</p>'+
+    '<div class="btns">'+
+    '<button type="submit" class="br">&#10007; Confirm Rejection</button>'+
+    '<a href="'+base+'?id='+id+'&action=approve" class="ba">&#10003; Approve Instead</a>'+
+    '</div></form></div>'+
+    '<div class="foot">Kuwait Hospital – Room Booking System</div>'+
+    '</div></body></html>';
+}
+
+function approvedPage(id,result) {
+  return resultPage('&#10003;','#166534','Booking Approved',
+    'The requester has been notified by email.',
+    id,result.room,result.when,'#dcfce7','#166534');
+}
+function rejectedPage(id,result,reason) {
+  return resultPage('&#10007;','#b91c1c','Booking Rejected',
+    'The requester has been notified with the reason.',
+    id,result.room,result.when+' | Reason: '+reason,'#fee2e2','#991b1b');
+}
+function alreadyDonePage(id,status) {
+  var col=status==='Approved'?'#166534':'#b91c1c';
+  var bg=status==='Approved'?'#dcfce7':'#fee2e2';
+  var tx=status==='Approved'?'#166534':'#991b1b';
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"></head>'+
+    '<body style="margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f0f4fa;'+
+    'display:flex;align-items:center;justify-content:center;min-height:100vh">'+
+    '<div style="background:#fff;border-radius:14px;overflow:hidden;max-width:440px;width:94vw;text-align:center">'+
+    '<div style="background:'+col+';padding:28px">'+
+    '<div style="font-size:44px;color:#fff">&#8505;</div>'+
+    '<h2 style="color:#fff;margin:8px 0 0;font-size:20px">Already '+status+'</h2></div>'+
+    '<div style="padding:24px">'+
+    '<p style="color:#374151;font-size:14px;margin:0 0 16px">'+
+    'This booking has already been <b>'+status+'</b>. No action needed.</p>'+
+    '<div style="background:'+bg+';border-radius:8px;padding:12px;font-size:13px;color:'+tx+'">'+
+    'Reference: <b>'+id+'</b></div></div>'+
+    '<div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:12px;'+
+    'font-size:11px;color:#9ca3af">Kuwait Hospital – Room Booking System</div>'+
+    '</div></body></html>';
+}
+function lockedPage(id,status,message) {
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"></head>'+
+    '<body style="margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f0f4fa;'+
+    'display:flex;align-items:center;justify-content:center;min-height:100vh">'+
+    '<div style="background:#fff;border-radius:14px;overflow:hidden;max-width:440px;width:94vw;text-align:center">'+
+    '<div style="background:#92400e;padding:28px">'+
+    '<div style="font-size:44px">&#128274;</div>'+
+    '<h2 style="color:#fff;margin:8px 0 0;font-size:20px">Button Disabled</h2></div>'+
+    '<div style="padding:24px">'+
+    '<p style="color:#374151;font-size:14px;margin:0 0 16px">'+message+'</p>'+
+    '<div style="background:#fff7ed;border-radius:8px;padding:12px;font-size:13px;color:#92400e">'+
+    'Reference: <b>'+id+'</b><br>Status: <b>'+status+'</b></div></div>'+
+    '<div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:12px;'+
+    'font-size:11px;color:#9ca3af">Kuwait Hospital – Room Booking System</div>'+
+    '</div></body></html>';
+}
+function errorPage(msg,id) {
+  var base=ScriptApp.getService().getUrl();
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"></head>'+
+    '<body style="margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f0f4fa;'+
+    'display:flex;align-items:center;justify-content:center;min-height:100vh">'+
+    '<div style="background:#fff;border-radius:14px;overflow:hidden;max-width:480px;width:94vw;text-align:center">'+
+    '<div style="background:#92400e;padding:24px">'+
+    '<h2 style="color:#fff;margin:0;font-size:19px">&#9888; Cannot Approve – Conflict</h2></div>'+
+    '<div style="padding:24px">'+
+    '<div style="background:#fff7ed;border-radius:8px;padding:14px;text-align:left;'+
+    'font-size:13px;color:#92400e;line-height:1.7">'+msg+'</div>'+
+    (id?'<a href="'+base+'?id='+id+'&action=reject" style="display:inline-block;margin-top:16px;'+
+    'background:#b91c1c;color:#fff;border-radius:8px;padding:12px 24px;'+
+    'font:600 14px Segoe UI,sans-serif;text-decoration:none">&#10007; Reject This Booking</a>':'')+
+    '</div><div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:12px;'+
+    'font-size:11px;color:#9ca3af">Kuwait Hospital – Room Booking System</div>'+
+    '</div></body></html>';
+}
+function resultPage(icon,headerBg,heading,subtext,id,room,when,detailBg,detailColor) {
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"></head>'+
+    '<body style="margin:0;font-family:Segoe UI,Arial,sans-serif;background:#f0f4fa;'+
+    'display:flex;align-items:center;justify-content:center;min-height:100vh">'+
+    '<div style="background:#fff;border-radius:14px;overflow:hidden;max-width:440px;width:94vw;text-align:center">'+
+    '<div style="background:'+headerBg+';padding:30px 28px">'+
+    '<div style="font-size:46px;color:#fff">'+icon+'</div>'+
+    '<h2 style="color:#fff;margin:8px 0 0;font-size:21px;font-weight:600">'+heading+'</h2></div>'+
+    '<div style="padding:24px 28px">'+
+    '<p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 14px">'+subtext+'</p>'+
+    '<div style="background:'+detailBg+';border-radius:8px;padding:14px;text-align:left;'+
+    'font-size:13px;color:'+detailColor+';line-height:1.9">'+
+    '<b>Reference:</b> '+id+'<br><b>Room:</b> '+room+'<br><b>When:</b> '+when+'</div></div>'+
+    '<div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:14px;'+
+    'font-size:11px;color:#9ca3af">Kuwait Hospital – Room Booking System</div>'+
+    '</div></body></html>';
+}
+
+// ================================================================
+// EMAIL HELPERS
+// ================================================================
+function sendItEmail(room,date,start,end,title,host,atts,needs) {
+  if (!needs||needs==='None') return;
+  var items=needs.split(', ');
+  var itemChips=items.map(function(x){
+    return '<span style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.6);'+
+      'border-radius:20px;padding:5px 12px 5px 6px;font-size:13px;color:#16233b;font-weight:500;margin:0 6px 6px 0">'+
+      '<span style="width:22px;height:22px;background:#1a56db;border-radius:50%;display:inline-flex;'+
+      'align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">&#10003;</span>'+
+      x+'</span>';
+  }).join('');
+  var plainText='Dear IT Team,\n\nPlease be informed that a meeting room has been approved and requires IT setup.\n\nRoom: '+room+'\nDate: '+date+'\nTime: '+start+' – '+end+'\nMeeting: '+title+'\nOrganizer: '+host+'\nAttendees: '+atts+'\n\nIT Requirements:\n'+items.map(function(x){return '  • '+x;}).join('\n')+'\n\nPlease have everything ready before '+start+'.\n\nRegards,\nKuwait Hospital – Room Booking System';
+  var html=
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'+
+    '<body style="margin:0;padding:0;background:#f0f4fa;font-family:Segoe UI,Arial,sans-serif">'+
+    '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">'+
+    '<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">'+
+    // Header
+    '<tr><td style="background:#0D2D6B;border-radius:12px 12px 0 0;padding:22px 28px">'+
+    '<table cellpadding="0" cellspacing="0"><tr>'+
+    '<td style="background:rgba(255,255,255,.15);border-radius:8px;width:44px;height:44px;text-align:center;vertical-align:middle;font-size:16px;font-weight:700;color:#fff">KH</td>'+
+    '<td style="padding-left:12px"><div style="color:#fff;font-size:16px;font-weight:600">Kuwait Hospital</div>'+
+    '<div style="color:rgba(255,255,255,.7);font-size:12px">Meeting Room Booking System</div></td></tr></table></td></tr>'+
+    // Sub-header
+    '<tr><td style="background:#1a56db;padding:12px 28px">'+
+    '<table cellpadding="0" cellspacing="0"><tr>'+
+    '<td style="background:rgba(255,255,255,.2);border-radius:6px;width:32px;height:32px;text-align:center;vertical-align:middle;font-size:18px">&#128187;</td>'+
+    '<td style="padding-left:10px"><div style="color:#fff;font-size:13px;font-weight:600">IT SETUP REQUIRED</div>'+
+    '<div style="color:rgba(255,255,255,.8);font-size:11px;margin-top:2px">Action needed before meeting starts</div></td>'+
+    '</tr></table></td></tr>'+
+    // Body
+    '<tr><td style="background:#fff;padding:24px 28px">'+
+    '<p style="font-size:14px;color:#374151;margin:0 0 20px;line-height:1.6">Dear <b>IT Team</b>,<br><br>'+
+    'Please be informed that a meeting room has been <span style="color:#166534;font-weight:600">approved</span> and requires IT setup. '+
+    'Kindly ensure all equipment is ready before the meeting starts.</p>'+
+    // Meeting details card
+    '<div style="background:#f0f4fa;border-radius:10px;padding:18px 20px;margin-bottom:20px">'+
+    '<div style="font-size:11px;font-weight:700;color:#6b7896;letter-spacing:.08em;margin-bottom:12px;text-transform:uppercase">Meeting Details</div>'+
+    '<table width="100%" cellpadding="0" cellspacing="0">'+
+    detailRowIt('&#128205;','Room',room,'#0D2D6B',true)+
+    detailRowIt('&#128197;','Date',date,'#374151',false)+
+    detailRowIt('&#128336;','Time',start+' – '+end,'#374151',false)+
+    detailRowIt('&#128203;','Meeting',title,'#374151',false)+
+    detailRowIt('&#128100;','Organizer',host,'#374151',false)+
+    detailRowIt('&#128101;','Attendees',atts,'#374151',false)+
+    '</table></div>'+
+    // Requirements
+    '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:18px 20px;margin-bottom:20px">'+
+    '<div style="font-size:11px;font-weight:700;color:#1e40af;letter-spacing:.08em;margin-bottom:12px;text-transform:uppercase">&#9881; IT Requirements</div>'+
+    '<div style="display:flex;flex-wrap:wrap">'+itemChips+'</div></div>'+
+    // Reminder banner
+    '<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:12px 16px;text-align:center">'+
+    '<span style="font-size:13px;color:#854d0e;font-weight:600">&#9201; Please have everything ready before '+start+'</span></div>'+
+    '<p style="font-size:13px;color:#6b7280;margin:20px 0 0;line-height:1.6">Thank you for your support.<br><br>Regards,<br><b>Kuwait Hospital – Room Booking System</b></p>'+
+    '</td></tr>'+
+    // Footer
+    '<tr><td style="background:#f9fafb;border-radius:0 0 12px 12px;padding:14px 28px;border-top:1px solid #e5e7eb;text-align:center">'+
+    '<p style="font-size:11px;color:#9ca3af;margin:0">Kuwait Hospital &nbsp;|&nbsp; Room Booking &nbsp;|&nbsp; IT Department</p>'+
+    '</td></tr></table></td></tr></table></body></html>';
+  sendHtmlMail('itsupport@kuwaithospital.com.kw','IT Setup Required – '+room+' – '+date,plainText,html);
+}
+
+function detailRowIt(icon,label,value,color,isFirst) {
+  var bt=isFirst?'':'border-top:1px solid #e2e8f0';
+  return '<tr><td style="padding:8px 0;'+bt+';width:26px;vertical-align:top;font-size:15px">'+icon+'</td>'+
+    '<td style="padding:8px 0 8px 8px;'+bt+';width:90px;vertical-align:top">'+
+    '<span style="font-size:12px;color:#6b7280;font-weight:500">'+label+'</span></td>'+
+    '<td style="padding:8px 0 8px 8px;'+bt+'">'+
+    '<span style="font-size:13px;color:'+color+';font-weight:'+(isFirst?'600':'400')+'">'+value+'</span></td></tr>';
+}
+
+function sendHospEmail(room,date,start,end,title,atts,refr) {
+  if (!refr||refr==='None') return;
+  var items=refr.split(', ');
+  var itemChips=items.map(function(x){
+    return '<span style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.6);'+
+      'border-radius:20px;padding:5px 12px 5px 6px;font-size:13px;color:#16233b;font-weight:500;margin:0 6px 6px 0">'+
+      '<span style="width:22px;height:22px;background:#be185d;border-radius:50%;display:inline-flex;'+
+      'align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">&#10003;</span>'+
+      x+'</span>';
+  }).join('');
+  var plainText='Dear Hospitality Team,\n\nA meeting room has been approved and requires refreshments.\n\nRoom: '+room+'\nDate: '+date+'\nTime: '+start+' – '+end+'\nMeeting: '+title+'\nAttendees: '+atts+'\n\nRefreshments:\n'+items.map(function(x){return '  • '+x;}).join('\n')+'\n\nPlease have everything ready before '+start+'.\n\nRegards,\nKuwait Hospital – Room Booking System';
+  var html=
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'+
+    '<body style="margin:0;padding:0;background:#f0f4fa;font-family:Segoe UI,Arial,sans-serif">'+
+    '<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">'+
+    '<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">'+
+    '<tr><td style="background:#0D2D6B;border-radius:12px 12px 0 0;padding:22px 28px">'+
+    '<table cellpadding="0" cellspacing="0"><tr>'+
+    '<td style="background:rgba(255,255,255,.15);border-radius:8px;width:44px;height:44px;text-align:center;vertical-align:middle;font-size:16px;font-weight:700;color:#fff">KH</td>'+
+    '<td style="padding-left:12px"><div style="color:#fff;font-size:16px;font-weight:600">Kuwait Hospital</div>'+
+    '<div style="color:rgba(255,255,255,.7);font-size:12px">Meeting Room Booking System</div></td></tr></table></td></tr>'+
+    '<tr><td style="background:#be185d;padding:12px 28px">'+
+    '<table cellpadding="0" cellspacing="0"><tr>'+
+    '<td style="background:rgba(255,255,255,.2);border-radius:6px;width:32px;height:32px;text-align:center;vertical-align:middle;font-size:18px">&#9749;</td>'+
+    '<td style="padding-left:10px"><div style="color:#fff;font-size:13px;font-weight:600">REFRESHMENTS REQUIRED</div>'+
+    '<div style="color:rgba(255,255,255,.8);font-size:11px;margin-top:2px">Action needed before meeting starts</div></td>'+
+    '</tr></table></td></tr>'+
+    '<tr><td style="background:#fff;padding:24px 28px">'+
+    '<p style="font-size:14px;color:#374151;margin:0 0 20px;line-height:1.6">Dear <b>Hospitality Team</b>,<br><br>'+
+    'Please be informed that a meeting room has been <span style="color:#166534;font-weight:600">approved</span> and requires refreshments. '+
+    'Kindly ensure all items are prepared and ready before the meeting starts.</p>'+
+    '<div style="background:#f0f4fa;border-radius:10px;padding:18px 20px;margin-bottom:20px">'+
+    '<div style="font-size:11px;font-weight:700;color:#6b7896;letter-spacing:.08em;margin-bottom:12px;text-transform:uppercase">Meeting Details</div>'+
+    '<table width="100%" cellpadding="0" cellspacing="0">'+
+    detailRowIt('&#128205;','Room',room,'#0D2D6B',true)+
+    detailRowIt('&#128197;','Date',date,'#374151',false)+
+    detailRowIt('&#128336;','Time',start+' – '+end,'#374151',false)+
+    detailRowIt('&#128203;','Meeting',title,'#374151',false)+
+    detailRowIt('&#128101;','Attendees',atts,'#374151',false)+
+    '</table></div>'+
+    '<div style="background:#fdf2f8;border:1px solid #fbcfe8;border-radius:10px;padding:18px 20px;margin-bottom:20px">'+
+    '<div style="font-size:11px;font-weight:700;color:#be185d;letter-spacing:.08em;margin-bottom:12px;text-transform:uppercase">&#9749; Refreshments Required</div>'+
+    '<div style="display:flex;flex-wrap:wrap">'+itemChips+'</div></div>'+
+    '<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:12px 16px;text-align:center">'+
+    '<span style="font-size:13px;color:#854d0e;font-weight:600">&#9201; Please have everything ready before '+start+'</span></div>'+
+    '<p style="font-size:13px;color:#6b7280;margin:20px 0 0;line-height:1.6">Thank you for your support.<br><br>Regards,<br><b>Kuwait Hospital – Room Booking System</b></p>'+
+    '</td></tr>'+
+    '<tr><td style="background:#f9fafb;border-radius:0 0 12px 12px;padding:14px 28px;border-top:1px solid #e5e7eb;text-align:center">'+
+    '<p style="font-size:11px;color:#9ca3af;margin:0">Kuwait Hospital &nbsp;|&nbsp; Room Booking &nbsp;|&nbsp; Hospitality Department</p>'+
+    '</td></tr></table></td></tr></table></body></html>';
+  sendHtmlMail('hospitality@kuwaithospital.com.kw','Refreshments Required – '+room+' – '+date,plainText,html);
+}
+
+// ================================================================
+// HELPERS
+// ================================================================
+function getSheet(name) {
+  var ss=SpreadsheetApp.openById(SHEET_ID), sheet=ss.getSheetByName(name);
+  if (!sheet) {
+    sheet=ss.insertSheet(name);
+    if (name==='Bookings') {
+      sheet.appendRow(['ID','Status','Room','Date','Start','End','Name','Dept','Email','Mobile',
+        'Host / Organizer','Title','Attendees','IT Needs','Refreshments','Private','Notes','Submitted','ApproveToken']);
+      sheet.setFrozenRows(1);
+      sheet.getRange(1,1,1,19).setFontWeight('bold').setBackground('#0D2D6B').setFontColor('#ffffff');
+    }
+  }
+  return sheet;
+}
+function fmtDate(d) {
+  if (!d) return '';
+  if (typeof d==='string') return d;
+  var dt=new Date(d);
+  return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
+}
+function fmtDateDisplay(s) {
+  if (!s) return '';
+  try {
+    var p=s.toString().split('-');
+    if (p.length===3) {
+      var d=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+      return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+', '+
+             pad(d.getDate())+' '+
+             ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+
+             ' '+d.getFullYear();
+    }
+  } catch(e){}
+  return s;
+}
+function toTimeStr(v) {
+  if (!v) return '';
+  if (typeof v==='string') return v;
+  if (v instanceof Date) return pad(v.getHours())+':'+pad(v.getMinutes());
+  if (typeof v==='number') { var m=Math.round(v*24*60); return pad(Math.floor(m/60))+':'+pad(m%60); }
+  return String(v);
+}
+function toMin(t) { if (!t) return 0; var p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); }
+function dateTimeMs(ds,ts) { try { return new Date(ds+'T'+ts+':00+03:00').getTime(); } catch(e){ return 0; } }
+function pad(n) { return String(n).padStart(2,'0'); }
+function newId() { return 'KH'+new Date().getFullYear()+Math.random().toString(36).substr(2,6).toUpperCase(); }
+function newToken() { return Math.random().toString(36).substr(2,16)+Math.random().toString(36).substr(2,16); }
+
+function sendMail(to,subject,body) {
+  try { MailApp.sendEmail({to:to,subject:subject,body:body,name:SENDER_NAME}); }
+  catch(e){ Logger.log('sendMail error: '+e.message); }
+}
+function sendHtmlMail(to,subject,body,html) {
+  try {
+    var opts={to:to,subject:subject,body:body,htmlBody:html,name:SENDER_NAME};
+    if (ADMIN_CC) opts.cc=ADMIN_CC;
+    MailApp.sendEmail(opts);
+  } catch(e){ Logger.log('sendHtmlMail error: '+e.message); }
+}
+
+// ================================================================
+// CHECK — Run manually to verify setup
+// ================================================================
+function checkNow() {
+  Logger.log('ADMIN_EMAIL : '+ADMIN_EMAIL);
+  Logger.log('ADMIN_CC    : '+ADMIN_CC);
+  for (var i=0;i<ROOMS.length;i++)
+    Logger.log(ROOMS[i].name+' | location='+ROOMS[i].location);
+  Logger.log('Quota: '+MailApp.getRemainingDailyQuota());
+}
