@@ -7,9 +7,9 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
   <style>
     :root {
-      --blue:#0b4a8f; --blue-mid:#1560b8; --blue-soft:#dce8f7;
-      --ink:#16233b; --sub:#44506a; --muted:#6b7896; --line:#d0d9e8;
-      --bg:#e8eef7; --card:#ffffff; --field:#f5f7fb;
+      --blue:#0D2D6B; --blue-mid:#1A3A7A; --blue-soft:#dce8f7;
+      --ink:#16233b; --sub:#44506a; --muted:#6b7896; --line:#c8d8ee;
+      --bg:#e8eef7; --card:#ffffff; --field:#EBF2FB;
       --ok:#127a3e; --err:#b42318;
     }
     @media (prefers-color-scheme: dark) {
@@ -45,10 +45,10 @@
     }
     .band-in { max-width:1020px; margin:0 auto; display:flex; align-items:center; gap:14px; }
     .logo-box {
-      width:56px; height:38px; background:#fff; border-radius:6px;
-      display:flex; align-items:center; justify-content:center; flex:none; padding:4px;
+      height:46px; background:#fff; border-radius:7px;
+      display:flex; align-items:center; justify-content:center; flex:none; padding:5px 8px;
     }
-    .kh-mark { font-size:20px; font-weight:800; color:var(--blue); letter-spacing:-1px; line-height:1; font-style:normal; }
+    .logo-box img { height:36px; width:auto; display:block; }
     h1 { font-size:19px; font-weight:600; letter-spacing:-.2px; }
 
     /* Main */
@@ -191,7 +191,7 @@
 
 <header class="band">
   <div class="band-in">
-    <div class="logo-box"><em class="kh-mark">KH</em></div>
+    <div class="logo-box"><img src="logo.png" alt="Kuwait Hospital"></div>
     <h1>Book a Meeting Room</h1>
   </div>
 </header>
@@ -349,7 +349,7 @@
 
 <script>
 // ── Config ────────────────────────────────────────────────────────
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbzRmMCEcmIBEV8yzJX5xd9pGWnA8NjqE3WM5GUgLLCrJxnHiEALj5LTAIb_o8e6m1oH/exec';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbwM9MzgGc_8xWvrqgB80MDjIGNCyrbj15OHZBYXPY1bEpLURpBDZOrqdfV-j-RESyBg/exec';
 
 var ROOMS_DATA = [];
 var HOURS_DATA = { start:'08:00', end:'17:00', step:30, maxHours:8, days:[0,1,2,3,4] };
