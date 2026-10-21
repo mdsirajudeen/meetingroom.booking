@@ -372,7 +372,7 @@ callGas('getRooms', [], function(rooms) {
   rooms.forEach(function(r) {
     var opt = document.createElement('option');
     opt.value = r.name;
-    opt.textContent = r.name + ' (' + r.location + ' · up to ' + r.capacity + ')';
+    opt.textContent = r.name + ' (' + r.location + ')';
     sel.appendChild(opt);
   });
 }, function(err) {
@@ -387,7 +387,7 @@ document.getElementById('room').addEventListener('change', function() {
   var roomName = this.value;
   var room = ROOMS_DATA.find(function(r){ return r.name === roomName; });
   document.getElementById('roomHint').textContent = room
-    ? room.location + ' · up to ' + room.capacity + ' people · needs approval'
+    ? room.location + ' · needs approval'
     : '';
   refreshTimeSlots();
 });
