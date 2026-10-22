@@ -341,7 +341,6 @@ function show(s) {
   var info = ROOM_INFO[ROOM] || {};
   $('sub').textContent = [
     s.today,
-    info.capacity ? 'Up to ' + info.capacity + ' people' : (s.capacity ? 'Up to ' + s.capacity + ' people' : ''),
     info.location || s.location || ''
   ].filter(Boolean).join('  ·  ');
 
