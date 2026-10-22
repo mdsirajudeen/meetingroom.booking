@@ -129,9 +129,10 @@
 
     /* Fieldsets */
     .fsets { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    fieldset { border:1.5px solid var(--line); border-radius:9px; padding:6px 11px 11px; background:var(--field); margin:0; min-width:0; }
-    legend { font-size:11px; color:var(--sub); padding:0 6px; font-weight:600; white-space:nowrap; line-height:1.6; }
-    legend small { color:var(--muted); font-weight:400; }
+    fieldset { border:none; padding:0; margin:0; min-width:0; background:none; }
+    .fset-lbl { font-size:12px; color:var(--sub); font-weight:600; margin-bottom:4px; display:block; }
+    .fset-lbl small { color:var(--muted); font-weight:400; }
+    .fset-box { border:1.5px solid var(--line); border-radius:9px; padding:9px 11px 11px; background:var(--field); }
     .checks { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:7px 8px; margin-top:7px; }
     .check { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink); cursor:pointer; }
     .check input[type=checkbox] {
@@ -463,26 +464,30 @@
         <div class="sec">Requirements &amp; Extras</div>
         <div class="fsets">
           <fieldset>
-            <legend>IT requirements <small>– IT Support</small></legend>
-            <div class="checks">
-              <label class="check"><input type="checkbox" name="it" value="Laptop"> Laptop</label>
-              <label class="check"><input type="checkbox" name="it" value="Projector"> Projector</label>
-              <label class="check"><input type="checkbox" name="it" value="Video conf."> Video conf.</label>
-              <label class="check"><input type="checkbox" name="it" value="Mic/Speakers"> Mic/Speakers</label>
-              <label class="check"><input type="checkbox" name="it" value="Whiteboard"> Whiteboard</label>
-              <label class="check"><input type="checkbox" name="it" value="Printer/Clicker"> Printer/Clicker</label>
+            <span class="fset-lbl">IT requirements <small>– IT Support</small></span>
+            <div class="fset-box">
+              <div class="checks">
+                <label class="check"><input type="checkbox" name="it" value="Laptop"> Laptop</label>
+                <label class="check"><input type="checkbox" name="it" value="Projector"> Projector</label>
+                <label class="check"><input type="checkbox" name="it" value="Video conf."> Video conf.</label>
+                <label class="check"><input type="checkbox" name="it" value="Mic/Speakers"> Mic/Speakers</label>
+                <label class="check"><input type="checkbox" name="it" value="Whiteboard"> Whiteboard</label>
+                <label class="check"><input type="checkbox" name="it" value="Printer/Clicker"> Printer/Clicker</label>
+              </div>
             </div>
           </fieldset>
           <fieldset>
-            <legend>Refreshments <small>– Hospitality</small></legend>
-            <div class="checks">
-              <label class="check"><input type="checkbox" name="rf" value="Water"> Water</label>
-              <label class="check"><input type="checkbox" name="rf" value="Tea/Coffee"> Tea / Coffee</label>
-              <label class="check"><input type="checkbox" name="rf" value="Juice"> Juice</label>
-              <label class="check"><input type="checkbox" name="rf" value="Snacks"> Snacks</label>
-            </div>
-            <div class="food-extra">
-              <textarea id="rfOther" rows="2" placeholder="Other details (optional)" style="resize:vertical;min-height:36px;width:100%;"></textarea>
+            <span class="fset-lbl">Refreshments <small>– Hospitality</small></span>
+            <div class="fset-box">
+              <div class="checks">
+                <label class="check"><input type="checkbox" name="rf" value="Water"> Water</label>
+                <label class="check"><input type="checkbox" name="rf" value="Tea/Coffee"> Tea / Coffee</label>
+                <label class="check"><input type="checkbox" name="rf" value="Juice"> Juice</label>
+                <label class="check"><input type="checkbox" name="rf" value="Snacks"> Snacks</label>
+              </div>
+              <div class="food-extra">
+                <textarea id="rfOther" rows="2" placeholder="Other details (optional)" style="resize:vertical;min-height:36px;width:100%;"></textarea>
+              </div>
             </div>
           </fieldset>
         </div>
