@@ -3,345 +3,571 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="60">
-  <title>Room Status – Kuwait Hospital</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+  <title>Room Display – Kuwait Hospital</title>
   <style>
-    :root {
-      --blue:#0D2D6B; --blue-mid:#1A3A7A;
-      --green:#166534; --green-bg:#dcfce7; --green-border:#86efac;
-      --red:#b91c1c;   --red-bg:#fee2e2;   --red-border:#fca5a5;
-      --amber:#92400e; --amber-bg:#fef3c7; --amber-border:#fde68a;
-      --ink:#16233b; --sub:#44506a; --muted:#6b7896; --line:#c8d8ee;
-      --bg:#e8eef7; --card:#ffffff; --field:#EBF2FB;
+    :root { --navy:#1e2d5c; --gold:#c9a961; --busy:#b91c1c; --free:#166634; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; background: #0b0f17; color: #fff;
+           font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
+    .wrap { min-height: 100%; display: flex; flex-direction: column; padding: 2.2vh 3vw; gap: 2vh; }
+
+    /* ── TOP BAR ── */
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+           border-bottom: 1px solid #1e2a3a; padding-bottom: 1.6vh; }
+    .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .logo  { height: 7vh; min-height: 44px; aspect-ratio: 1.5; background: #fff;
+             border-radius: 10px; padding: 4px; display: flex; align-items: center; justify-content: center; }
+    .logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .room  { font-size: clamp(22px,4vh,40px); font-weight: 700; white-space: nowrap;
+             overflow: hidden; text-overflow: ellipsis; }
+    .sub   { color: #94a3b8; font-size: clamp(12px,1.8vh,17px); }
+    .clock { text-align: right; }
+    .clock .t { font-size: clamp(24px,5vh,52px); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .live  { display: inline-flex; align-items: center; gap: 8px; color: #94a3b8;
+             font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
+    .live::before { content: ""; width: 8px; height: 8px; border-radius: 50%;
+                    background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: p 2s infinite; }
+    .live.off::before { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+    @keyframes p { 50% { opacity:.35; } }
+
+    /* ── STATUS BANNER ── */
+    .status { border-radius: 28px; padding: 4vh 3vw; text-align: center;
+              transition: background .4s; box-shadow: inset 0 2px 10px rgba(0,0,0,.35); }
+    .status.busy { background: var(--busy); }
+    .status.free { background: var(--free); }
+    .label   { font-size: clamp(40px,11vh,120px); font-weight: 800;
+               text-transform: uppercase; line-height: 1.05; letter-spacing: 2px; }
+    .mtitle  { font-size: clamp(20px,4vh,40px); font-weight: 600; margin-top: 1vh; word-break: break-word; }
+    .host    { font-size: clamp(15px,2.6vh,26px); opacity: .9; }
+    .count   { display: inline-block; margin-top: 1.6vh; background: rgba(0,0,0,.22);
+               padding: .8vh 2vw; border-radius: 99px;
+               font-size: clamp(16px,2.8vh,28px); font-weight: 600; }
+    .bar     { margin-top: 2vh; height: 14px; background: rgba(0,0,0,.3); border-radius: 99px; overflow: hidden; }
+    .fill    { height: 100%; width: 0; background: linear-gradient(90deg,var(--gold),#f59e0b); transition: width .5s; }
+    .barlbl  { display: flex; justify-content: space-between; font-size: 13px; color: #e2e8f0; margin-top: 6px; }
+
+    /* ── SCHEDULE ── */
+    .up    { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .up h2 { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: #94a3b8;
+             margin: 0 0 1vh; border-bottom: 1px solid #2d3748; padding-bottom: 8px; }
+    ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column;
+         gap: 1vh; overflow-y: auto; }
+    li { background: #1a2332; border-radius: 18px; padding: 1.4vh 18px;
+         border-left: 5px solid var(--gold); display: flex; justify-content: space-between;
+         gap: 12px; align-items: center; }
+    li .tm { font-weight: 700; color: #e2e8f0; font-size: clamp(15px,2.2vh,22px); font-variant-numeric: tabular-nums; }
+    li .nm { color: #94a3b8; font-size: clamp(13px,1.9vh,19px); }
+    li.past { opacity: .45; border-left-color: #475569; }
+    li.active-slot { border-left-color: #ef4444; background: #1f1515; }
+    .none  { color: #64748b; font-style: italic; text-align: center; padding: 2vh 0; }
+    .foot  { text-align: center; font-size: 12px; color: #475569;
+             border-top: 1px solid #1e293b; padding-top: 1vh; }
+
+    /* ── SETUP SCREEN ── */
+    .setup { margin: auto; text-align: center; padding: 4vh; }
+    .setup h2 { color: var(--gold); font-size: clamp(20px,4vh,36px); margin-bottom: 2vh; }
+    .url-box { background: #1a2332; border-radius: 14px; padding: 2vh 3vw; margin: 1.5vh 0;
+               border-left: 4px solid var(--gold); text-align: left; }
+    .url-box .lbl { font-size: 12px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+    .url-box .url { font-size: clamp(12px,1.8vh,16px); color: #e2e8f0; word-break: break-all; font-family: monospace; }
+
+    /* ── SCREENSAVER ── */
+    #screensaver {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: #0b1a3d; align-items: center; justify-content: center;
+      cursor: pointer; font-family: "Segoe UI", system-ui, sans-serif;
     }
-    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-    html, body { height:100%; }
-    body {
-      background:var(--bg); color:var(--ink);
-      font-family:'Inter',system-ui,sans-serif;
-      display:flex; flex-direction:column; min-height:100vh;
-    }
+    #screensaver.active { display: flex; }
+    .ss-corner { position: absolute; z-index: 6; width: 16px; height: 16px;
+                 border-color: rgba(100,160,255,.4); border-style: solid; }
+    .ss-tl { top:14px; left:14px;  border-width:1.5px 0 0 1.5px; }
+    .ss-tr { top:14px; right:14px; border-width:1.5px 1.5px 0 0; }
+    .ss-bl { bottom:14px; left:14px;  border-width:0 0 1.5px 1.5px; }
+    .ss-br { bottom:14px; right:14px; border-width:0 1.5px 1.5px 0; }
+    .ss-hint { position:absolute; bottom:clamp(16px,3vmin,32px); color:rgba(100,160,255,.4);
+               font-size:clamp(12px,1.8vmin,18px); letter-spacing:1.5px; z-index:7; }
 
-    /* Header */
-    .band {
-      background:var(--blue); padding:14px 28px;
-      display:flex; align-items:center; gap:16px;
-      box-shadow:0 2px 16px rgba(8,40,80,.35); flex-shrink:0;
-    }
-    .logo-box {
-      height:52px; background:#fff; border-radius:8px;
-      display:flex; align-items:center; justify-content:center;
-      padding:5px 10px; flex-shrink:0;
-    }
-    .logo-box img { height:40px; width:auto; }
-    .band-title { flex:1; }
-    .band-title h1 { color:#fff; font-size:20px; font-weight:700; }
-    .band-title p  { color:rgba(255,255,255,.65); font-size:13px; margin-top:2px; }
-    .live-clock { text-align:right; flex-shrink:0; }
-    .clk-time { font-size:26px; font-weight:800; color:#fff; letter-spacing:.06em; }
-    .clk-date { font-size:12px; color:rgba(255,255,255,.7); margin-top:2px; }
+    /* Logo mode */
+    #ss-logo-mode { display:flex; flex-direction:column; align-items:center; position:relative; z-index:5; }
+    #ss-canvas { position:absolute; inset:0; width:100%; height:100%; opacity:.7; pointer-events:none; }
+    #ss-vignette { position:absolute; inset:0; pointer-events:none;
+                   background:radial-gradient(ellipse 55% 55% at 50% 48%,rgba(11,26,61,.55) 0%,rgba(11,26,61,.15) 70%,rgba(11,26,61,.45) 100%); }
+    .ss-logo-wrap { position:relative; width:clamp(180px,34vmin,380px); height:clamp(180px,34vmin,380px);
+                    display:flex; align-items:center; justify-content:center; }
+    .ss-logo-sq { width:92%; height:92%; background:#fff; border-radius:clamp(18px,3vmin,32px);
+                  display:flex; align-items:center; justify-content:center; overflow:hidden;
+                  box-shadow:0 0 40px rgba(100,160,255,.35);
+                  animation:ss-float 4s ease-in-out infinite; will-change:transform; }
+    .ss-logo-wrap::after { content:''; position:absolute; left:50%; bottom:calc(-1 * clamp(10px,2.2vmin,24px));
+                  width:60%; height:clamp(8px,1.6vmin,16px); margin-left:-30%; border-radius:50%;
+                  background:rgba(100,160,255,.6); filter:blur(clamp(4px,1vmin,10px));
+                  animation:ss-float-shadow 4s ease-in-out infinite; }
+    @keyframes ss-float { 0%,100% { transform:translateY(calc(-1 * clamp(6px,1.5vmin,16px))); }
+                          50%     { transform:translateY(clamp(6px,1.5vmin,16px)); } }
+    @keyframes ss-float-shadow { 0%,100% { transform:scaleX(.75); opacity:.3; }
+                                 50%     { transform:scaleX(1);   opacity:.6; } }
+    @media (prefers-reduced-motion:reduce) { .ss-logo-sq, .ss-logo-wrap::after { animation:none; } }
+    .ss-logo-sq img { width:88%; height:88%; object-fit:contain; display:block; }
+    .ss-name { color:#c8e0ff; font-size:clamp(40px,min(10.5vmin,6.8vw),130px); font-weight:600; letter-spacing:.1em; line-height:1.1;
+               margin-top:clamp(20px,4vmin,44px); text-align:center; text-shadow:0 0 30px rgba(100,160,255,.6); }
+    .ss-sub  { color:#c8e0ff; font-size:clamp(14px,2.6vmin,28px); letter-spacing:.35em; margin-top:clamp(6px,1.2vmin,14px);
+               text-align:center; opacity:.75; }
+    .ss-div  { width:clamp(260px,50vmin,560px); height:1px; background:linear-gradient(90deg,transparent,rgba(200,224,255,.5),transparent);
+               margin:clamp(16px,3vmin,32px) auto 0; }
+    .ss-clk  { color:#c8e0ff; font-size:clamp(36px,7vmin,84px); font-weight:200; letter-spacing:.1em; font-family:monospace;
+               font-variant-numeric:tabular-nums; margin-top:clamp(14px,2.5vmin,28px); text-align:center; line-height:1;
+               text-shadow:0 0 30px rgba(100,160,255,.5); }
+    .ss-dt   { color:#c8e0ff; font-size:clamp(16px,3vmin,32px); font-weight:300; letter-spacing:.2em; font-family:monospace;
+               margin-top:clamp(8px,1.6vmin,18px); text-align:center; text-shadow:0 0 20px rgba(100,160,255,.4); }
 
-    /* Main */
-    main { flex:1; display:flex; flex-direction:column; padding:16px; }
-
-    /* Room card */
-    .room-card {
-      background:var(--card); border-radius:16px;
-      border:3px solid var(--line);
-      box-shadow:0 4px 24px rgba(11,74,143,.08);
-      display:flex; flex-direction:column; flex:1;
-      overflow:hidden; transition:border-color .3s;
-    }
-    .room-card.available { border-color:var(--green-border); }
-    .room-card.occupied  { border-color:var(--red-border); }
-
-    .status-bar {
-      padding:18px 24px; display:flex; align-items:center; gap:14px; flex-shrink:0;
-    }
-    .room-card.available .status-bar { background:var(--green-bg); }
-    .room-card.occupied  .status-bar { background:var(--red-bg); }
-    .room-card.loading   .status-bar { background:var(--field); }
-
-    .status-dot { width:20px; height:20px; border-radius:50%; flex-shrink:0; }
-    .room-card.available .status-dot { background:var(--green); animation:pulse-green 2s ease infinite; }
-    .room-card.occupied  .status-dot { background:var(--red); animation:pulse-red 1.5s ease infinite; }
-    .room-card.loading   .status-dot { background:var(--muted); }
-
-    @keyframes pulse-green {
-      0%,100% { box-shadow:0 0 0 0 rgba(22,101,52,.4); }
-      50%      { box-shadow:0 0 0 10px rgba(22,101,52,0); }
-    }
-    @keyframes pulse-red {
-      0%,100% { box-shadow:0 0 0 0 rgba(185,28,28,.4); }
-      50%      { box-shadow:0 0 0 10px rgba(185,28,28,0); }
-    }
-
-    .status-label { font-size:20px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
-    .room-card.available .status-label { color:var(--green); }
-    .room-card.occupied  .status-label { color:var(--red); }
-    .room-card.loading   .status-label { color:var(--muted); }
-
-    .status-until { margin-left:auto; font-size:15px; font-weight:600; }
-    .room-card.available .status-until { color:var(--green); }
-    .room-card.occupied  .status-until { color:var(--red); }
-
-    .room-name-row {
-      padding:18px 24px 12px; border-bottom:1px solid var(--line); flex-shrink:0;
-    }
-    .room-name { font-size:32px; font-weight:800; color:var(--blue); line-height:1.15; }
-    .room-loc  { font-size:15px; color:var(--muted); margin-top:6px; }
-
-    .current-section { padding:20px 24px; flex:1; display:flex; flex-direction:column; gap:16px; }
-
-    .meet-label { font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--muted); }
-    .meet-title { font-size:24px; font-weight:700; color:var(--ink); line-height:1.3; margin-top:6px; }
-    .meet-title.private { color:var(--muted); font-style:italic; font-weight:500; font-size:20px; }
-
-    .meet-meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
-    .chip {
-      display:inline-flex; align-items:center; gap:6px;
-      background:var(--field); border:1px solid var(--line);
-      border-radius:20px; padding:6px 14px; font-size:13px; color:var(--sub); font-weight:500;
-    }
-
-    .time-row {
-      display:flex; align-items:center; gap:12px;
-      background:var(--field); border-radius:12px; padding:14px 18px;
-    }
-    .time-block { text-align:center; flex:1; }
-    .time-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
-    .time-val { font-size:22px; font-weight:800; color:var(--blue); margin-top:2px; }
-    .time-arrow { font-size:22px; color:var(--muted); }
-
-    .progress-bg { background:var(--field); border-radius:99px; height:8px; overflow:hidden; }
-    .progress-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,#dc2626,#ef4444); transition:width .5s ease; }
-    .progress-info { display:flex; justify-content:space-between; margin-top:6px; font-size:12px; color:var(--muted); }
-
-    .next-box { background:var(--amber-bg); border:1px solid var(--amber-border); border-radius:12px; padding:14px 18px; }
-    .next-label { font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--amber); }
-    .next-title { font-size:16px; font-weight:600; color:var(--ink); margin-top:4px; }
-    .next-time  { font-size:14px; color:var(--amber); margin-top:3px; }
-
-    .avail-section {
-      flex:1; display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      padding:24px; text-align:center; gap:14px;
-    }
-    .avail-icon { font-size:80px; line-height:1; }
-    .avail-text { font-size:28px; font-weight:700; color:var(--green); }
-    .avail-sub  { font-size:16px; color:var(--muted); }
-
-    .loading-wrap { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px; padding:20px; }
-    .spin { width:40px; height:40px; border:4px solid var(--line); border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .error-msg { font-size:14px; color:var(--red); text-align:center; }
-
-    footer { background:var(--blue); color:rgba(255,255,255,.55); font-size:11px; text-align:center; padding:9px; flex-shrink:0; }
+    /* Alert mode */
+    #ss-alert-mode { display:none; flex-direction:column; align-items:center; justify-content:center;
+                     position:relative; z-index:5; width:100%; padding:40px 60px; }
+    #ss-alert-mode.show { display:flex; }
+    #ss-logo-mode.hidden { display:none; }
+    .alert-badge { background:#c9a961; color:#0b1a3d; font-size:12px; font-weight:700;
+                   letter-spacing:2.5px; padding:6px 20px; border-radius:30px; margin-bottom:28px;
+                   animation:badge-pulse 2s ease-in-out infinite; }
+    @keyframes badge-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(201,169,97,.5); }
+                             50%     { box-shadow:0 0 0 12px rgba(201,169,97,0); } }
+    .alert-card { background:rgba(255,255,255,.05); border:1px solid rgba(100,160,255,.25);
+                  border-radius:24px; padding:40px 50px; text-align:center; max-width:680px; width:100%; }
+    .alert-in    { color:rgba(100,160,255,.7); font-size:13px; letter-spacing:2px; margin-bottom:10px; }
+    .alert-timer { color:#c9a961; font-size:clamp(48px,10vh,90px); font-weight:200;
+                   font-family:monospace; letter-spacing:4px; line-height:1;
+                   text-shadow:0 0 30px rgba(201,169,97,.5); }
+    .alert-label { color:rgba(255,255,255,.5); font-size:14px; letter-spacing:1.5px; margin-top:6px; margin-bottom:28px; }
+    .alert-divider { width:60px; height:1px; background:rgba(100,160,255,.2); margin:0 auto 28px; }
+    .alert-title { color:#fff; font-size:clamp(22px,4vh,38px); font-weight:600; line-height:1.2; margin-bottom:12px; }
+    .alert-meta  { color:rgba(150,190,255,.7); font-size:clamp(14px,2.2vh,20px); margin-bottom:8px; }
+    .alert-time  { color:#c9a961; font-size:clamp(16px,2.5vh,24px); font-weight:500; }
+    .alert-room  { color:rgba(100,160,255,.5); font-size:13px; letter-spacing:1px; margin-top:6px; }
+    .alert-progress { margin-top:28px; height:4px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; }
+    .alert-prog-fill { height:100%; background:linear-gradient(90deg,#c9a961,#f59e0b);
+                       border-radius:99px; transition:width 1s linear; }
+    .alert-ss-clk { color:rgba(200,224,255,.5); font-size:22px; font-weight:200;
+                    font-family:monospace; letter-spacing:4px; margin-top:32px; }
   </style>
 </head>
 <body>
 
-<header class="band">
-  <div class="logo-box"><img src="logo.png" alt="Kuwait Hospital" onerror="this.style.display='none'"></div>
-  <div class="band-title">
-    <h1 id="headerTitle">Room Status</h1>
-    <p>Kuwait Hospital – Live Room Availability</p>
+<!-- SCREENSAVER -->
+<div id="screensaver">
+  <div class="ss-corner ss-tl"></div>
+  <div class="ss-corner ss-tr"></div>
+  <div class="ss-corner ss-bl"></div>
+  <div class="ss-corner ss-br"></div>
+  <div class="ss-hint">Tap anywhere to return</div>
+  <canvas id="ss-canvas"></canvas>
+  <div id="ss-vignette"></div>
+  <div id="ss-logo-mode">
+    <div class="ss-logo-wrap">
+      <div class="ss-logo-sq"><img src="logo.png" alt="Kuwait Hospital"></div>
+    </div>
+    <div class="ss-name">KUWAIT HOSPITAL</div>
+    <div class="ss-sub">MEETING ROOM BOOKING</div>
+    <div class="ss-div"></div>
+    <div class="ss-clk" id="ss-clk">--:--:--</div>
+    <div class="ss-dt"  id="ss-dt">--- -- --- ----</div>
   </div>
-  <div class="live-clock">
-    <div class="clk-time" id="clkTime">00:00:00</div>
-    <div class="clk-date" id="clkDate"></div>
+  <div id="ss-alert-mode">
+    <div class="alert-badge">⏰ &nbsp; UPCOMING MEETING</div>
+    <div class="alert-card">
+      <div class="alert-in">STARTS IN</div>
+      <div class="alert-timer" id="alert-timer">--:--</div>
+      <div class="alert-label">MINUTES</div>
+      <div class="alert-divider"></div>
+      <div class="alert-title"  id="alert-title">Loading…</div>
+      <div class="alert-meta"   id="alert-meta"></div>
+      <div class="alert-time"   id="alert-time"></div>
+      <div class="alert-room"   id="alert-room"></div>
+      <div class="alert-progress">
+        <div class="alert-prog-fill" id="alert-prog" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="alert-ss-clk" id="alert-clk">--:--:--</div>
   </div>
-</header>
+</div>
 
-<main>
-  <div class="room-card loading" id="roomCard">
-    <div class="status-bar">
-      <div class="status-dot"></div>
-      <div class="status-label" id="statusLabel">Loading…</div>
+<!-- MAIN DISPLAY -->
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <span class="logo"><img src="logo.png" alt="Kuwait Hospital logo" onerror="this.style.display='none'"></span>
+      <div style="min-width:0">
+        <div class="room" id="room">Loading…</div>
+        <div class="sub"  id="sub"></div>
+      </div>
     </div>
-    <div class="room-name-row">
-      <div class="room-name" id="roomNameDisp">–</div>
-      <div class="room-loc" id="roomLocDisp"></div>
-    </div>
-    <div class="loading-wrap" id="cardBody">
-      <div class="spin"></div>
-      <div style="color:var(--muted);font-size:14px">Fetching room status…</div>
+    <div class="clock">
+      <div class="t" id="clock">--:--</div>
+      <span class="live" id="live">Live</span>
     </div>
   </div>
-</main>
 
-<footer>
-  Kuwait Hospital &nbsp;·&nbsp; Meeting Room Booking System &nbsp;·&nbsp; Auto-refreshes every 60 seconds
-</footer>
+  <section class="status free" id="status" aria-live="polite">
+    <div class="label"  id="label">Available</div>
+    <div class="mtitle" id="mtitle"></div>
+    <div class="host"   id="host"></div>
+    <div class="count"  id="count"  hidden></div>
+    <div id="barBox" hidden>
+      <div class="bar"><div class="fill" id="fill"></div></div>
+      <div class="barlbl"><span id="bStart"></span><span id="bEnd"></span></div>
+    </div>
+  </section>
+
+  <section class="up">
+    <h2>Today's schedule</h2>
+    <ul id="list">
+      <li class="none" style="border:0;background:none">Loading…</li>
+    </ul>
+  </section>
+
+  <div class="foot">
+    Kuwait Hospital &middot; Meeting Room Booking &middot; updates every minute
+  </div>
+</div>
 
 <script>
+/* ── CONFIG ── */
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbwM9MzgGc_8xWvrqgB80MDjIGNCyrbj15OHZBYXPY1bEpLURpBDZOrqdfV-j-RESyBg/exec';
 
-// Map URL room name → location (covers both old and new naming)
-var ROOM_LOC = {
-  'Executive Hall':        'Floor 10',
-  'Executive Room':        'Floor 10',
-  'Basement Meeting Hall': 'Basement Floor',
-  'Basement Meeting Room': 'Basement Floor',
-  'Meeting Hall 1015':     'Floor 10',
-  'Hall 1015':             'Floor 10',
-  
-  'KHC Meeting Hall':      'Floor 1'
+var ROOM_INFO = {
+  'Executive Room':        { location: 'Floor 10',       capacity: 10 },
+  'Executive Hall':        { location: 'Floor 10',       capacity: 10 },
+  'Basement Meeting Room': { location: 'Basement Floor', capacity: 15 },
+  'Basement Meeting Hall': { location: 'Basement Floor', capacity: 15 },
+  'Hall 1015':             { location: 'Floor 10',       capacity: 15 },
+  'Meeting Hall 1015':     { location: 'Floor 10',       capacity: 15 },
+  'KHC Meeting Hall':      { location: 'Floor 1',        capacity: 20 }
 };
 
-// Map URL room name → GAS room name (if different)
-// The URL param room name might differ from what's in the Sheet
-var ROOM_MAP = {
-  'Executive Room':        'Executive Room',
-  'Basement Meeting Room': 'Basement Meeting Room',
-  'Hall 1015':             'Hall 1015',
-  'Executive Hall':        'Executive Hall',
-  'Basement Meeting Hall': 'Basement Meeting Hall',
-  'Meeting Hall 1015':     'Meeting Hall 1015',
-  'KHC Meeting Hall':      'KHC Meeting Hall'
-};
+/* ── HELPERS ── */
+var $ = function(id){ return document.getElementById(id); };
+var pad = function(n){ return String(n).padStart(2,'0'); };
+var ROOM = (new URLSearchParams(location.search).get('room') || '').trim();
 
-var urlParams = new URLSearchParams(window.location.search);
-var displayName = urlParams.get('room') || 'Unknown Room';
-var gasRoomName = ROOM_MAP[displayName] || displayName;
-var roomLoc     = ROOM_LOC[displayName] || '';
+var skew = 0;
+var nowMs = function(){ return Date.now() + skew; };
 
-document.getElementById('headerTitle').textContent   = displayName;
-document.getElementById('roomNameDisp').textContent  = displayName;
-document.getElementById('roomLocDisp').textContent   = roomLoc ? '📍 ' + roomLoc : '';
-
-// Live clock
-var DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-function tick() {
-  var n = new Date();
-  document.getElementById('clkTime').textContent =
-    pad(n.getHours()) + ':' + pad(n.getMinutes()) + ':' + pad(n.getSeconds());
-  document.getElementById('clkDate').textContent =
-    DAYS[n.getDay()] + ', ' + n.getDate() + ' ' + MONTHS[n.getMonth()] + ' ' + n.getFullYear();
-}
-tick(); setInterval(tick, 1000);
-function pad(n){ return String(n).padStart(2,'0'); }
-
-function callGas(fn, args, ok, fail) {
-  fetch(GAS_URL, { method:'POST', body: JSON.stringify({ fn:fn, args:args }) })
-    .then(function(r){ return r.json(); })
-    .then(function(d){ d.ok ? ok(d.data) : fail(d.error || 'Server error'); })
-    .catch(function(e){ fail(e.message || 'Network error'); });
+function kuwaitNow() {
+  var now = new Date();
+  var utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utcMs + 3 * 3600000);
 }
 
-function renderStatus(data) {
-  var card  = document.getElementById('roomCard');
-  var label = document.getElementById('statusLabel');
-  var body  = document.getElementById('cardBody');
-  var now   = data.now || Date.now();
-  var html  = '';
+function toKuwaitHM(ms) {
+  var d = new Date(ms);
+  var h = (d.getUTCHours() + 3) % 24;
+  return pad(h) + ':' + pad(d.getUTCMinutes());
+}
 
-  var meetings = (data.meetings || []).filter(function(m){ return m.endMs > now; });
-  var current  = null;
-  meetings.forEach(function(m){ if (m.startMs <= now && m.endMs > now) current = m; });
-  var upcoming = meetings.filter(function(m){ return m.startMs > now; });
-  upcoming.sort(function(a,b){ return a.startMs - b.startMs; });
-  var next = upcoming[0] || null;
+function durStr(ms) {
+  var m = Math.max(0, Math.ceil(ms / 60000));
+  return m >= 60 ? Math.floor(m/60) + ' h ' + (m % 60 ? (m % 60) + ' min' : '') : m + ' min';
+}
 
-  // Remove old status-until chip
-  var oldUtil = card.querySelector('.status-until');
-  if (oldUtil) oldUtil.remove();
+/* ── SETUP SCREEN ── */
+if (!ROOM) {
+  var base = location.origin + location.pathname;
+  document.querySelector('.wrap').innerHTML =
+    '<div class="setup"><h2>Room Display Setup</h2>' +
+    '<p style="color:#94a3b8;margin-bottom:2vh">Add <code style="color:var(--gold)">?room=RoomName</code> to the URL.</p>' +
+    '<div class="url-box"><div class="lbl">Executive Room (Floor 10)</div><div class="url">'        + base + '?room=Executive%20Room</div></div>' +
+    '<div class="url-box"><div class="lbl">Basement Meeting Room (Basement)</div><div class="url">' + base + '?room=Basement%20Meeting%20Room</div></div>' +
+    '<div class="url-box"><div class="lbl">KHC Meeting Hall (Floor 1)</div><div class="url">'       + base + '?room=KHC%20Meeting%20Hall</div></div>' +
+    '<div class="url-box"><div class="lbl">Hall 1015 (Floor 10)</div><div class="url">'             + base + '?room=Hall%201015</div></div>' +
+    '</div>';
+}
 
-  function addUntil(txt) {
-    var u = document.createElement('div');
-    u.className = 'status-until';
-    u.textContent = txt;
-    card.querySelector('.status-bar').appendChild(u);
-  }
+/* ── STATE ── */
+var S = null;
+var ssActive = false;
+var manualExitUntil = 0;
 
-  if (current) {
-    card.className = 'room-card occupied';
-    label.textContent = '🔴 In Use';
+/* ── MAIN DISPLAY ── */
+function paint() {
+  $('clock').textContent = toKuwaitHM(nowMs());
+  if (!S) return;
 
-    var elapsed  = now - current.startMs;
-    var duration = current.endMs - current.startMs;
-    var pct      = Math.min(100, Math.round(elapsed / duration * 100));
-    var minsLeft = Math.ceil((current.endMs - now) / 60000);
-    addUntil(minsLeft <= 60 ? 'Ends in ' + minsLeft + ' min' : 'Until ' + current.end);
+  var t    = nowMs();
+  var cur  = null, next = null;
+  S.meetings.forEach(function(m){
+    if (t >= m.startMs && t < m.endMs) cur = m;
+  });
+  S.meetings.forEach(function(m){
+    if (m.startMs > t && (!next || m.startMs < next.startMs)) next = m;
+  });
 
-    html = '<div class="current-section"><div>' +
-           '<div class="meet-label">Current Meeting</div>' +
-           '<div class="meet-title' + (current.priv ? ' private' : '') + '">' +
-           (current.priv ? '🔒 Private Meeting' : (current.title || 'Meeting')) + '</div>';
-    if (!current.priv) {
-      html += '<div class="meet-meta">';
-      if (current.host) html += '<span class="chip">👤 ' + current.host + '</span>';
-      if (current.dept) html += '<span class="chip">🏥 ' + current.dept + '</span>';
-      html += '</div>';
-    }
-    html += '</div>' +
-            '<div class="time-row">' +
-              '<div class="time-block"><div class="time-lbl">Started</div><div class="time-val">' + current.start + '</div></div>' +
-              '<div class="time-arrow">→</div>' +
-              '<div class="time-block"><div class="time-lbl">Ends</div><div class="time-val">' + current.end + '</div></div>' +
-            '</div>' +
-            '<div>' +
-              '<div class="progress-bg"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
-              '<div class="progress-info"><span>' + pct + '% elapsed</span><span>' + minsLeft + ' min remaining</span></div>' +
-            '</div>';
-    if (next) {
-      html += '<div class="next-box">' +
-              '<div class="next-label">⏭ Next Meeting</div>' +
-              '<div class="next-title">' + (next.priv ? '🔒 Private' : (next.title || 'Meeting')) + '</div>' +
-              '<div class="next-time">🕐 ' + next.start + ' – ' + next.end + '</div>' +
-              '</div>';
-    }
-    html += '</div>';
-
-  } else if (next) {
-    card.className = 'room-card available';
-    label.textContent = '🟢 Available';
-    var minsToNext = Math.ceil((next.startMs - now) / 60000);
-    var freeStr = minsToNext <= 60 ? 'Free for ' + minsToNext + ' min' : 'Free until ' + next.start;
-    addUntil(freeStr);
-
-    html = '<div class="avail-section">' +
-           '<div class="avail-icon">✅</div>' +
-           '<div class="avail-text">Room is Available</div>' +
-           '<div class="avail-sub">' + freeStr + '</div>' +
-           '</div>' +
-           '<div style="padding:0 24px 20px">' +
-           '<div class="next-box">' +
-           '<div class="next-label">⏭ Next Meeting</div>' +
-           '<div class="next-title">' + (next.priv ? '🔒 Private' : (next.title || 'Meeting')) + '</div>' +
-           '<div class="next-time">🕐 ' + next.start + ' – ' + next.end + '</div>' +
-           '</div></div>';
-
+  var st = $('status');
+  if (cur) {
+    st.className = 'status busy';
+    $('label').textContent  = 'Occupied';
+    $('mtitle').textContent = cur.priv ? 'Private meeting' : cur.title;
+    $('host').textContent   = cur.priv ? '' : [cur.host, cur.dept].filter(Boolean).join(' · ');
+    $('count').hidden = false;
+    $('count').textContent  = 'Ends in ' + durStr(cur.endMs - t) + '  ·  until ' + cur.end;
+    $('barBox').hidden = false;
+    $('fill').style.width = Math.min(100, (t - cur.startMs) / (cur.endMs - cur.startMs) * 100) + '%';
+    $('bStart').textContent = cur.start;
+    $('bEnd').textContent   = cur.end;
   } else {
-    card.className = 'room-card available';
-    label.textContent = '🟢 Available';
-    addUntil('All day');
-
-    html = '<div class="avail-section">' +
-           '<div class="avail-icon">✅</div>' +
-           '<div class="avail-text">Room is Available</div>' +
-           '<div class="avail-sub">No meetings scheduled for the rest of today</div>' +
-           '</div>';
+    st.className = 'status free';
+    $('label').textContent  = 'Available';
+    $('mtitle').textContent = next ? 'Next: ' + (next.priv ? 'Private meeting' : next.title) : 'No more meetings today';
+    $('host').textContent   = next ? next.start + ' – ' + next.end : '';
+    $('count').hidden  = !next;
+    if (next) $('count').textContent = 'Free for ' + durStr(next.startMs - t);
+    $('barBox').hidden = true;
   }
 
-  body.outerHTML = html;
+  var items = $('list').children;
+  for (var i = 0; i < items.length; i++) {
+    var li = items[i];
+    var end   = Number(li.dataset.end);
+    var start = Number(li.dataset.start);
+    li.classList.toggle('past',        end   <= t);
+    li.classList.toggle('active-slot', start <= t && t < end);
+  }
 }
 
-function showError(msg) {
-  var body = document.getElementById('cardBody');
-  if (body) body.innerHTML =
-    '<div class="error-msg">⚠️ Could not load status<br><small>' + msg + '</small><br><br>' +
-    '<button onclick="loadStatus()" style="margin-top:8px;padding:8px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">Retry</button></div>';
+/* ── SERVER DATA ── */
+function show(s) {
+  S    = s;
+  skew = s.now - Date.now();
+  $('room').textContent = s.room || ROOM;
+
+  var info = ROOM_INFO[ROOM] || {};
+  $('sub').textContent = [
+    s.today,
+    info.capacity ? 'Up to ' + info.capacity + ' people' : (s.capacity ? 'Up to ' + s.capacity + ' people' : ''),
+    info.location || s.location || ''
+  ].filter(Boolean).join('  ·  ');
+
+  var ul = $('list');
+  ul.innerHTML = '';
+  if (!s.meetings || !s.meetings.length) {
+    var li = document.createElement('li');
+    li.className = 'none'; li.style.cssText = 'border:0;background:none';
+    li.textContent = 'No meetings booked today'; ul.append(li);
+  } else {
+    s.meetings.forEach(function(m) {
+      var li = document.createElement('li');
+      li.dataset.end   = m.endMs;
+      li.dataset.start = m.startMs;
+      var row = document.createElement('div');
+      var tm = document.createElement('div'); tm.className = 'tm';
+      var nm = document.createElement('div'); nm.className = 'nm';
+      tm.textContent = m.start + ' – ' + m.end;
+      nm.textContent = m.priv ? 'Private meeting' : m.title + (m.host ? '  ·  ' + m.host : '');
+      row.append(tm, nm); li.append(row); ul.append(li);
+    });
+  }
+  $('live').className   = 'live';
+  $('live').textContent = 'Live';
+  paint();
+  evaluateScreensaver();
 }
 
-function loadStatus() {
-  callGas('getRoomStatus', [gasRoomName], renderStatus, showError);
+/* ── GAS FETCH (works on GitHub Pages) ── */
+function load() {
+  if (!ROOM) return;
+  fetch(GAS_URL, { method:'POST', body: JSON.stringify({ fn:'getRoomStatus', args:[ROOM] }) })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.ok) show(d.data);
+      else {
+        $('live').className = 'live off';
+        $('live').textContent = 'Error';
+        if (!S) $('sub').textContent = d.error || 'Could not load data';
+      }
+    })
+    .catch(function(e){
+      $('live').className = 'live off';
+      $('live').textContent = 'Reconnecting';
+      if (!S) $('sub').textContent = 'Network error – retrying…';
+    });
 }
 
-loadStatus();
-setInterval(loadStatus, 60000);
+/* ── SCREENSAVER LOGIC ── */
+function shouldActivateScreensaver() {
+  if (!S) return false;
+  var t = nowMs();
+  if (t < manualExitUntil) return false;
+
+  var hasMeetingNow = S.meetings.some(function(m){ return t >= m.startMs && t < m.endMs; });
+  if (hasMeetingNow) return false;
+
+  var min60 = 60 * 60 * 1000;
+  var upcomingSoon = S.meetings.some(function(m){ return m.startMs > t && (m.startMs - t) <= min60; });
+  if (upcomingSoon) return false;
+
+  if (S.meetings.length === 0) return true;
+
+  var future = S.meetings.filter(function(m){ return m.endMs > t; });
+  if (future.length === 0) {
+    var lastEnd = Math.max.apply(null, S.meetings.map(function(m){ return m.endMs; }));
+    return t >= lastEnd + 30 * 60 * 1000;
+  }
+  return true;
+}
+
+function getUpcomingAlert() {
+  if (!S) return null;
+  var t = nowMs();
+  var min60 = 60 * 60 * 1000;
+  var alert = null;
+  S.meetings.forEach(function(m){
+    if (m.startMs > t && (m.startMs - t) <= min60) {
+      if (!alert || m.startMs < alert.startMs) alert = m;
+    }
+  });
+  return alert;
+}
+
+function evaluateScreensaver() {
+  shouldActivateScreensaver() ? enterScreensaver() : exitScreensaver();
+}
+
+function enterScreensaver() {
+  if (!ssActive) {
+    ssActive = true;
+    $('screensaver').classList.add('active');
+    startMatrix();
+  }
+  updateScreensaverMode();
+}
+
+function updateScreensaverMode() {
+  if (!ssActive) return;
+  var alert = getUpcomingAlert();
+  var logoEl  = $('ss-logo-mode');
+  var alertEl = $('ss-alert-mode');
+  if (alert) {
+    logoEl.classList.add('hidden');
+    alertEl.classList.add('show');
+    renderAlert(alert);
+  } else {
+    logoEl.classList.remove('hidden');
+    alertEl.classList.remove('show');
+  }
+}
+
+function renderAlert(meeting) {
+  var t       = nowMs();
+  var msLeft  = Math.max(0, meeting.startMs - t);
+  var secLeft = Math.floor(msLeft / 1000);
+  $('alert-timer').textContent = pad(Math.floor(secLeft / 60)) + ':' + pad(secLeft % 60);
+  $('alert-title').textContent = meeting.priv ? 'Private Meeting' : meeting.title;
+  $('alert-meta').textContent  = meeting.priv ? '' : [meeting.host, meeting.dept].filter(Boolean).join('  ·  ');
+  $('alert-time').textContent  = meeting.start + ' – ' + meeting.end;
+  $('alert-room').textContent  = ROOM;
+  var prog = Math.max(0, Math.min(100, ((60*60*1000 - msLeft) / (60*60*1000)) * 100));
+  $('alert-prog').style.width = prog + '%';
+}
+
+function exitScreensaver() {
+  if (!ssActive) return;
+  ssActive = false;
+  $('screensaver').classList.remove('active');
+  $('ss-logo-mode').classList.remove('hidden');
+  $('ss-alert-mode').classList.remove('show');
+}
+
+function exitScreensaverManual() {
+  manualExitUntil = nowMs() + 10 * 60 * 1000;
+  exitScreensaver();
+  setTimeout(evaluateScreensaver, 10 * 60 * 1000 + 1000);
+}
+$('screensaver').addEventListener('click', exitScreensaverManual);
+
+/* ── SCREENSAVER CLOCK ── */
+function tickSS() {
+  var kn = kuwaitNow();
+  var h  = pad(kn.getHours());
+  var m  = pad(kn.getMinutes());
+  var s  = pad(kn.getSeconds());
+  var ts = h + ':' + m + ':' + s;
+  $('ss-clk').textContent    = ts;
+  $('alert-clk').textContent = ts;
+  var D = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  var M = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  $('ss-dt').textContent = D[kn.getDay()] + ' ' + pad(kn.getDate()) + ' ' + M[kn.getMonth()] + ' ' + kn.getFullYear();
+
+  if (ssActive) {
+    var alert = getUpcomingAlert();
+    updateScreensaverMode();
+    if (alert) renderAlert(alert);
+  }
+}
+tickSS();
+setInterval(tickSS, 1000);
+setInterval(evaluateScreensaver, 30000);
+
+/* ── MATRIX RAIN ── */
+var mStarted = false;
+function startMatrix() {
+  if (mStarted) return;
+  mStarted = true;
+  var mc    = $('ss-canvas');
+  var mctx  = mc.getContext('2d');
+  var chars = 'アイウエオカキクケコ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZابتثجحخ';
+  var trail = ['rgba(220,238,255,.98)','rgba(100,160,255,.72)','rgba(60,110,220,.48)',
+               'rgba(30,70,180,.28)','rgba(15,40,140,.14)'];
+  var fs, cols, drops = [], spd = [];
+  function rnd(){ return chars[Math.floor(Math.random() * chars.length)]; }
+  function newSpeed(){ return Math.random() * 0.18 + 0.10; }
+  function setup() {
+    mc.width  = window.innerWidth;
+    mc.height = window.innerHeight;
+    fs   = Math.max(14, Math.round(Math.min(mc.width, mc.height) / 45));
+    cols = Math.ceil(mc.width / fs);
+    var rows = mc.height / fs;
+    for (var i = 0; i < cols; i++) {
+      if (drops[i] === undefined) drops[i] = Math.random() * rows * 1.2 - rows * 0.2;
+      if (spd[i]   === undefined) spd[i]   = newSpeed();
+    }
+    drops.length = cols; spd.length = cols;
+    mctx.fillStyle = '#0b1a3d';
+    mctx.fillRect(0, 0, mc.width, mc.height);
+  }
+  setup();
+  var rT;
+  window.addEventListener('resize', function(){ clearTimeout(rT); rT = setTimeout(setup, 200); });
+  function drawM() {
+    mctx.fillStyle = 'rgba(11,26,61,0.12)';
+    mctx.fillRect(0, 0, mc.width, mc.height);
+    mctx.font = fs + 'px monospace';
+    var rows = mc.height / fs;
+    for (var i = 0; i < cols; i++) {
+      var y = Math.floor(drops[i]) * fs;
+      var x = i * fs;
+      for (var t = 0; t < trail.length; t++) {
+        var ty = y - fs * t;
+        if (ty < 0 || ty > mc.height + fs) continue;
+        mctx.fillStyle = trail[t];
+        mctx.fillText(rnd(), x, ty);
+      }
+      drops[i] += spd[i];
+      if (drops[i] - trail.length > rows) {
+        drops[i] = -Math.random() * 15;
+        spd[i]   = newSpeed();
+      }
+    }
+    requestAnimationFrame(drawM);
+  }
+  drawM();
+}
+
+/* ── BOOT ── */
+if (ROOM) {
+  $('room').textContent = ROOM;
+  load();
+  setInterval(load,  60000);
+  setInterval(paint,  1000);
+  setTimeout(function(){ location.reload(); }, 6 * 3600 * 1000);
+}
 </script>
 </body>
 </html>
